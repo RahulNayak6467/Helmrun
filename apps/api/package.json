@@ -1,0 +1,29 @@
+{
+  "name": "@helmrun/api",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Helmrun control-plane HTTP API",
+  "type": "module",
+  "scripts": {
+    "dev": "node --env-file-if-exists=../../.env --conditions=@helmrun/source --watch --import tsx src/main.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "node --eval \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
+    "start": "node --enable-source-maps dist/main.js",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run --root ../.. --passWithNoTests apps/api/"
+  },
+  "dependencies": {
+    "@helmrun/config": "workspace:*",
+    "@helmrun/database": "workspace:*",
+    "@helmrun/logger": "workspace:*",
+    "@helmrun/shared": "workspace:*",
+    "express": "5.2.1",
+    "ioredis": "5.11.1",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@types/express": "5.0.6",
+    "@types/supertest": "7.2.1",
+    "supertest": "7.3.0"
+  }
+}

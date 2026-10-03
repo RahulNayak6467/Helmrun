@@ -95,12 +95,18 @@ pnpm workspace. Full target and phase 0 layout: decision 005.
 
 ## Commands
 
-<!-- Update when phase 0 scripts exist. -->
-- `docker compose up -d`: local Postgres + Redis
-- `pnpm db:migrate`: apply migrations
-- `pnpm dev`: run the API in watch mode
-- `pnpm lint` / `pnpm typecheck` / `pnpm test` / `pnpm build`: all from the root
-- One workspace: `pnpm --filter <name> <script>`
+All from the repo root. Workspace names are `@helmrun/<folder>`.
+
+- `docker compose up -d`: local Postgres + Redis (`.env`)
+- `pnpm dev`: run the API in watch mode (workspace packages from source)
+- `pnpm db:migrate` / `pnpm db:migrate:create <name>` / `pnpm db:migrate:test`
+- `pnpm test`: unit + integration · `pnpm test:unit` · `pnpm test:integration`
+  (needs `docker compose -f docker-compose.test.yml --env-file .env.test up -d --wait`
+  and `pnpm db:migrate:test`)
+- `pnpm lint` / `pnpm typecheck` / `pnpm build` / `pnpm format:check`
+- `pnpm validate`: format, lint, typecheck, test, build (what CI runs)
+- One workspace: `pnpm --filter @helmrun/<name> <script>`
+- Package resolution (source in dev, `dist/` in prod): decision 006.
 
 ## Engineering conventions
 

@@ -1,0 +1,12 @@
+# Every folder matching these globs with a package.json is a workspace package.
+packages:
+  - apps/*
+  - packages/*
+
+# `pnpm add` pins exact versions, so installs are reproducible without surprises.
+saveExact: true
+
+# pnpm blocks dependency install scripts unless allowed. esbuild (used by tsx and
+# vite) ships prebuilt binaries as optional dependencies, so its script isn't needed.
+allowBuilds:
+  esbuild: false

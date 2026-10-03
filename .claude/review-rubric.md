@@ -19,6 +19,7 @@ Apply a lens only when the code under review matches its trigger.
 | owns a lifecycle (connect/start/stop, signals) | **Lifecycle**: startup order, graceful shutdown, cleanup, timeouts |
 | is on a hot path, loops over queries, or returns lists | **Performance**: N+1, indexes, unbounded results |
 | crosses a package/app boundary or adds a module | **Design**: layering, dependency direction, coupling, decisions |
+| is infrastructure config (compose files, env examples, CI workflows) | **Environment**: exposure, secrets, readiness, persistence, isolation |
 | always | **Correctness**, **maintainability** (naming, size, clarity), **observability** (light: could you debug this failure from logs?), **tests** for risky behaviour |
 
 What each lens asks:
@@ -41,6 +42,11 @@ What each lens asks:
   context; nothing sensitive logged.
 - **Maintainability**: mostly small fixes; important only when it will cause
   bugs (e.g. a 300-line function mixing layers).
+- **Environment**: services bound to `127.0.0.1`, not all interfaces;
+  credentials from env files, never hardcoded or committed; health checks so
+  dependents and `--wait` start only when services are ready; named volumes
+  where data should persist; test setup fully separate from dev (ports,
+  databases, volumes); pinned image versions.
 
 ## 2. Phase focus
 
@@ -65,6 +71,9 @@ Focus:
 - Boundaries: apps → packages only, `shared` has no deps, foundation packages
   generic (no Helmrun domain logic or names).
 - Tests: test DB isolated from dev, infra tests listed in the spec exist.
+- Local environment: compose services localhost-only with health checks,
+  env-driven credentials matching `.env.example` / `.env.test.example`, dev
+  and test stacks fully separate, `pnpm validate` passes from a clean clone.
 
 Don't flag:
 - Auth, API keys, tenancy, RBAC, rate limiting, quotas → phase 1

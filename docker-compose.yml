@@ -1,0 +1,56 @@
+name: helmrun-dev
+
+services:
+  postgres:
+    image: ${POSTGRES_IMAGE:?POSTGRES_IMAGE is required}
+    container_name: helmrun-postgres
+    restart: unless-stopped
+    init: true
+    environment:
+      POSTGRES_USER: ${DB_USER:?DB_USER is required}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      POSTGRES_DB: ${DB_NAME:?DB_NAME is required}
+    ports:
+      - '127.0.0.1:${DB_PORT:?DB_PORT is required}:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test:
+        ['CMD-SHELL', 'pg_isready -h 127.0.0.1 -p 5432 -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    stop_grace_period: 30s
+    shm_size: 128mb
+
+  redis:
+    image: ${REDIS_IMAGE:?REDIS_IMAGE is required}
+    container_name: helmrun-redis
+    restart: unless-stopped
+    init: true
+    environment:
+      REDISCLI_AUTH: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
+    command:
+      - /bin/sh
+      - -ec
+      - >-
+        exec redis-server --appendonly yes --appendfsync everysec
+        --requirepass "$$REDISCLI_AUTH"
+    ports:
+      - '127.0.0.1:${REDIS_PORT:?REDIS_PORT is required}:6379'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: [CMD-SHELL, "redis-cli -h 127.0.0.1 -p 6379 ping | grep -q '^PONG$$'"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    stop_grace_period: 30s
+
+volumes:
+  postgres_data:
+    name: helmrun-postgres-data
+  redis_data:
+    name: helmrun-redis-data

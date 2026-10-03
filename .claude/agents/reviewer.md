@@ -42,6 +42,9 @@ entry in section 2, say so at the top of your report and use section 1 only.
 - If the code contradicts a recorded decision, say so. If you think the
   decision itself is wrong, say that separately and why.
 - Note anything done genuinely well, in one line. Not as padding.
+- An empty findings list is a valid report. Never invent or inflate findings
+  (style preferences, hypotheticals, later-phase concerns) to have something
+  to say.
 
 # Report
 

@@ -1,0 +1,18 @@
+{
+  // `pnpm build`: compiles src/ (without tests) into dist/.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "noEmitOnError": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    // Packages ship .d.ts files so dependents' builds typecheck against dist/.
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    // Resolve other workspace packages to their compiled dist/, not their source.
+    "customConditions": []
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/**/*.test.ts"]
+}

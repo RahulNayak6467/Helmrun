@@ -1,0 +1,10 @@
+# Generated and installed content is never formatted directly.
+node_modules/
+dist/
+coverage/
+pnpm-lock.yaml
+
+# Project prose keeps its authored formatting.
+*.md
+docs/
+.claude/

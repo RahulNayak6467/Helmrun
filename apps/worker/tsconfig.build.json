@@ -1,0 +1,15 @@
+{
+  // `pnpm build`: compiles src/ (without tests) into dist/ for `pnpm start`.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "noEmitOnError": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "sourceMap": true,
+    // Resolve workspace packages to their compiled dist/, not their source.
+    "customConditions": []
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/**/*.test.ts"]
+}

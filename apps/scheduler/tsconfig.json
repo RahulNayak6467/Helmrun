@@ -1,0 +1,6 @@
+{
+  // Used by `pnpm typecheck`, the editor, ESLint, and tests. Never emits files.
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": { "noEmit": true },
+  "include": ["src/**/*.ts", "test/**/*.ts"]
+}

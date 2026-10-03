@@ -66,3 +66,8 @@ format, keeping done items at the bottom:
   Don't list them.
 
 Never write the fix into the source. The user writes it.
+
+A clean result is a valid result. If nothing meets the bar, say "no important
+issues" plainly (plus any real small fixes). Never pad the review with
+style preferences, hypotheticals, or later-phase concerns to have something
+to report.

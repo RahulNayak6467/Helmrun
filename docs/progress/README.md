@@ -47,6 +47,7 @@ and `/wrap` must surface the items listed for it.
 | 3 | Decide where run-state transition logic lives (shared by API, scheduler, worker, recovery) | Decision 005 |
 | 5 | Create `apps/runtime` (sandbox entrypoint, helmrun-runtime image) | Decision 005 |
 | 7 | Create `infrastructure/terraform/` | Decision 004 |
+| 7 | Confirm RDS Postgres and ElastiCache Valkey versions; align local images | Decision 007 |
 | 8 | Create `apps/dashboard` and `apps/cli` | Decision 004 |
 
 ## Per-phase detail

@@ -16,3 +16,6 @@ API/scheduler/worker processes) are listed in
 | 003 | [Claude edits source only in folders the user unlocks](003-claude-edit-guard.md) | 0 | Accepted |
 | 004 | [Monorepo layout and test placement](004-monorepo-layout.md) | 0 | Accepted |
 | 005 | [Target folder structure, created per phase](005-target-folder-structure.md) | 0 | Accepted |
+| 006 | [Workspace packages resolve to source in dev, dist in production](006-workspace-package-resolution.md) | 0 | Accepted |
+| 007 | [Local service images: Postgres 18 and Valkey](007-local-service-images.md) | 0 | Accepted |
+| 008 | [Local stacks: dev persists, test starts empty; Valkey requires auth](008-local-stack-policy.md) | 0 | Accepted |
