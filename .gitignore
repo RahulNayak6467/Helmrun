@@ -1,0 +1,97 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output (all apps/packages)
+dist/
+build/
+*.tsbuildinfo
+
+# Packaging (SDK / CLI publish dry-runs, phase 8)
+*.tgz
+
+# Tests (Vitest coverage, e2e reports)
+coverage/
+test-results/
+playwright-report/
+blob-report/
+
+# Environment files: real values never committed
+.env
+.env.*
+!.env.example
+!.env.test.example
+
+# Secrets and keys (AWS, TLS, signing)
+*.pem
+*.key
+*.p12
+*.crt
+secrets/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Profiling / debugging (load + failure testing, phase 8)
+.clinic/
+*.heapsnapshot
+*.cpuprofile
+load-tests/results/
+
+# Local data dirs (compose bind mounts: Postgres, Redis,
+#    Prometheus, Grafana; sandbox scratch dirs, phases 5–6) ─
+.data/
+.sandbox/
+
+# Dashboard: Next.js (phase 8)
+.next/
+out/
+next-env.d.ts
+
+# Terraform (phase 7): state/plans/vars contain secrets ───
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+crash.*.log
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# Claude Code: personal / transient
+.claude/settings.local.json
+.claude/unlocked-paths
+
+# Lint cache (eslint --cache)
+.eslintcache
+
+# Local SQS via LocalStack (phase 3)
+.localstack/
+volume/
+
+# Personal compose overrides
+docker-compose.override.yml
+
+# Terraform extras (phase 7)
+tfplan
+.terraformrc
+terraform.rc
+
+# Editor swap files
+*.swp
