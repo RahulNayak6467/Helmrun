@@ -5,9 +5,9 @@ Spec: `docs/phases/phase-0-foundation.md`
 ## Status
 Spec steps 1–8, 10–12, 14–15 and 19 done: monorepo, config, local stacks, env
 validation, database pool, migrations, app/server split, request IDs, logging,
-health/readiness, graceful shutdown, CI workflow (first GitHub run pending).
+health/readiness, graceful shutdown, CI workflow (green on GitHub).
 Each reviewed fresh, all findings fixed. 307 unit + 13 integration tests pass.
-Left: README, then step 13 (errors), Redis (step 9, user), scheduler and
+README written. Left: step 13 (errors), Redis (step 9, user), scheduler and
 worker shells, OpenAPI, CI extras.
 
 ## Done
@@ -57,9 +57,8 @@ worker shells, OpenAPI, CI extras.
   reviews, all findings fixed (decision 012, 2026-10-04)
 
 ## Next step
-Push and confirm the first CI run is green (fix anything it surfaces first).
-Then port the README from LLM-Gateway (step 21): local setup, migration
-commands, env vars, repo structure.
+Step 13, errors (item 3 below): the user writes the list of error kinds, each
+with its HTTP status and whether it's transient (question 1b).
 
 Local setup: `.env` must set `SHUTDOWN_TIMEOUT_MS` above
 `DB_STATEMENT_TIMEOUT_MS` (e.g. 20000), or the API refuses to start.
@@ -74,10 +73,12 @@ Port first (small changes):
    `.env.test.example`, test migrations, integration, build. Pinned action
    SHAs and toolchain; `push` only on `main` + `pull_request`; runs on `main`
    never cancel each other; stack logs on failure. `passWithNoTests` removed.
-   Fresh review: no important issues, 4 small fixed. Confirm the first GitHub
-   run is green after pushing.
-2. README (step 21): setup, migration commands, env vars, repo structure,
-   adapted from LLM-Gateway's README.
+   Fresh review: no important issues, 4 small fixed. First GitHub run green
+   (commit 069f982, 2026-10-04).
+2. ~~README (step 21)~~ written 2026-10-04 (Claude, from scratch at the
+   user's request, not ported): status, quickstart, tests, migrations,
+   configuration, repo layout, doc links. Update it as phase 0 pieces land
+   (Redis, error envelope, OpenAPI).
 
 Then the pieces that need a decision:
 3. Step 13, errors. Agreed so far: `shared` stays transport-neutral (no
@@ -89,7 +90,10 @@ Then the pieces that need a decision:
    live. Ports once the design is set: `not-found.middleware.ts`, the
    invalid-JSON / payload-too-large checks.
 4. Redis lifecycle (step 9): user writes it; location decision open. Add to
-   readiness and to shutdown as one more step.
+   readiness and to shutdown as one more step. When done, update `README.md`
+   (user asked): Valkey row in Configuration (`REDIS_URL` validated, drop
+   "read once the Redis client is added"), readiness description, layout if
+   it becomes a package.
 5. Scheduler + worker shells: `main.ts` + `config.ts`, start, log, shut down
    with the shared lifecycle helpers. No LLM-Gateway equivalent.
 6. OpenAPI baseline (step 17): tool choice and how schemas stay aligned with
