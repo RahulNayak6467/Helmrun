@@ -23,9 +23,6 @@ export default defineConfig({
     unstubEnvs: true,
     unstubGlobals: true,
     testTimeout: 5_000,
-    // Lets `pnpm test` pass before the first tests exist. Remove once phase 0 has tests,
-    // so a broken include glob can't silently run zero tests.
-    passWithNoTests: true,
     projects: [
       {
         extends: true,

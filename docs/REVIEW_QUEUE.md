@@ -3,6 +3,10 @@
 ## Open
 
 ## Done
+- [x] .github/workflows/ci.yml — every PR commit ran CI twice (`push` unfiltered + `pull_request`, different concurrency groups); `push` now limited to `main` (fixed 2026-10-04)
+- [x] .github/workflows/ci.yml — `cancel-in-progress` also cancelled earlier runs on `main`, leaving commits unverified; now cancels only off `main` (fixed 2026-10-04)
+- [x] .github/workflows/ci.yml — logs step ran on any failure, erroring itself when the stack never started; now gated on the `test-stack` step having run (fixed 2026-10-04)
+- [x] .github/workflows/ci.yml — redundant `env: CI: true` removed (runners set it) (fixed 2026-10-04)
 - [x] apps/api/src/config.ts — shutdown budget below the statement timeout (a request mid-query at SIGTERM outlasted the deadline → forced exit 1). Default `SHUTDOWN_TIMEOUT_MS` 10 s → 20 s (user's call) plus a rule: `SHUTDOWN_TIMEOUT_MS` must exceed `DB_STATEMENT_TIMEOUT_MS`, reported on `SHUTDOWN_TIMEOUT_MS`. Several slow queries in one request still need per-request deadlines (later) (fixed 2026-10-04)
 - [x] apps/api/src/http/server-closer.ts — `createHttpServerCloser` moved out of `main.ts`, tests moved alongside (fixed 2026-10-04)
 - [x] apps/api/src/main.ts — closer's `request` listener ran after the Express app's, so a synchronously answered request arriving on a busy connection after closing started went out `Connection: keep-alive` (client may reuse a socket about to close → ECONNRESET); now `prependListener`. Test fails with the old order. Note: pipelined requests parsed *before* closing started are settled already; listener order can't change those (fixed 2026-10-04)

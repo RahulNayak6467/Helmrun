@@ -3,12 +3,12 @@
 Spec: `docs/phases/phase-0-foundation.md`
 
 ## Status
-Spec steps 1–8, 10–12 and 14–15 done: monorepo, config, local stacks, env
+Spec steps 1–8, 10–12, 14–15 and 19 done: monorepo, config, local stacks, env
 validation, database pool, migrations, app/server split, request IDs, logging,
-health/readiness, graceful shutdown. Each reviewed fresh, all findings fixed.
-307 unit + 13 integration tests pass; lint, typecheck, format, build clean.
-Left: step 13 (errors, design in progress), Redis (step 9, user), scheduler
-and worker shells, OpenAPI, CI, README.
+health/readiness, graceful shutdown, CI workflow (first GitHub run pending).
+Each reviewed fresh, all findings fixed. 307 unit + 13 integration tests pass.
+Left: README, then step 13 (errors), Redis (step 9, user), scheduler and
+worker shells, OpenAPI, CI extras.
 
 ## Done
 - Docs imported; AEC renamed to Helmrun across all docs (2026-10-03)
@@ -57,43 +57,54 @@ and worker shells, OpenAPI, CI, README.
   reviews, all findings fixed (decision 012, 2026-10-04)
 
 ## Next step
-Step 13, error model: finish the design check. Agreed so far: `shared` stays
-transport-neutral (no `statusCode` on `AppError`); the API's error middleware
-maps errors to HTTP status. Pending (question 1b): instead of mapping each
-error code, every `AppError` declares a kind from a small closed list, and the
-API maps kind → status exhaustively. The user writes that list (each kind's
-HTTP status and whether it's transient). Then: envelope, unknown-error
-logging (pg `detail` leak), body-parser errors, not-found. Copyable from
-LLM-Gateway: `not-found.middleware.ts`, the invalid-JSON / payload-too-large
-checks.
+Push and confirm the first CI run is green (fix anything it surfaces first).
+Then port the README from LLM-Gateway (step 21): local setup, migration
+commands, env vars, repo structure.
 
-Local setup after this chunk: `.env` must set `SHUTDOWN_TIMEOUT_MS` above
+Local setup: `.env` must set `SHUTDOWN_TIMEOUT_MS` above
 `DB_STATEMENT_TIMEOUT_MS` (e.g. 20000), or the API refuses to start.
 
-## Porting plan (LLM-Gateway → Helmrun)
-One piece at a time, in spec order; `/review` after each; tests move with
-their code. Split pieces (errors, graceful shutdown) get a design check first.
-- ~~5 env validation~~ done
-- ~~7–8 pool, migrations~~ done (transaction helper deferred to phase 1)
-- 9 Redis lifecycle → deferred; user writes it after the porting (location open)
-- ~~10 app/server split~~ done
-- ~~11–12 request IDs, logging~~ done
-- 13 errors → `packages/shared` + `apps/api/src/http/error.middleware.ts` (split)
-- ~~14 health/readiness~~ done
-- ~~15 graceful shutdown~~ done (scheduler/worker wire it when their shells exist)
+## Order for the rest of phase 0 (changed 2026-10-04)
+The user's call: first everything that ports from LLM-Gateway with small
+changes, then the pieces that need a decision. `/review` after each piece.
+
+Port first (small changes):
+1. ~~CI workflow (step 19)~~ written 2026-10-04 (Claude, ported): job 1
+   format, lint, typecheck, unit; job 2 starts `docker-compose.test.yml` with
+   `.env.test.example`, test migrations, integration, build. Pinned action
+   SHAs and toolchain; `push` only on `main` + `pull_request`; runs on `main`
+   never cancel each other; stack logs on failure. `passWithNoTests` removed.
+   Fresh review: no important issues, 4 small fixed. Confirm the first GitHub
+   run is green after pushing.
+2. README (step 21): setup, migration commands, env vars, repo structure,
+   adapted from LLM-Gateway's README.
+
+Then the pieces that need a decision:
+3. Step 13, errors. Agreed so far: `shared` stays transport-neutral (no
+   `statusCode` on `AppError`); the API's error middleware maps errors to
+   HTTP status. Pending (question 1b): every `AppError` declares a kind from a
+   small closed list, and the API maps kind → status exhaustively; the user
+   writes that list (each kind's HTTP status, transient or not). Then
+   envelope, unknown-error logging (pg `detail` leak), where domain codes
+   live. Ports once the design is set: `not-found.middleware.ts`, the
+   invalid-JSON / payload-too-large checks.
+4. Redis lifecycle (step 9): user writes it; location decision open. Add to
+   readiness and to shutdown as one more step.
+5. Scheduler + worker shells: `main.ts` + `config.ts`, start, log, shut down
+   with the shared lifecycle helpers. No LLM-Gateway equivalent.
+6. OpenAPI baseline (step 17): tool choice and how schemas stay aligned with
+   Zod. No LLM-Gateway equivalent.
+7. CI extras: `gitleaks` secret scanning; pre-commit hook or not.
+
+Done from the earlier porting plan: env validation (5), pool + migrations
+(7–8, transaction helper deferred to phase 1), app/server split (10), request
+IDs + logging (11–12), health/readiness (14), graceful shutdown (15).
 
 ## Before closing phase 0
-- Remaining spec work: Redis lifecycle (step 9, user; add to readiness and
-  shutdown as one more step), scheduler + worker shells (`main.ts` +
-  `config.ts`, start/log/shut down cleanly with the shared lifecycle helpers),
-  OpenAPI baseline (step 17), README (step 21).
 - Phase exit sequence (CLAUDE.md): `/review fresh` → failure experiments →
   study pack (concepts, theory questions, interview questions) → `/drill`.
-- Remove `passWithNoTests` from `vitest.config.ts` (real tests exist now).
-- Write `.github/workflows/ci.yml` (currently empty) running `pnpm validate`
-  with the test stack (CI workstream P).
-- Add `gitleaks` secret scanning to CI, once the foundation files are imported
-  from LLM-Gateway and adapted.
+- After phase 0: discuss why CI starts `docker-compose.test.yml` instead of
+  GitHub Actions `services:` (user asked; include in the study pack).
 - Extract the proven foundation into a separate starter repo (GitHub template,
   e.g. `ts-monorepo-starter`): root configs, `packages/`, `apps/api` bootstrap
   + http layers, compose files, CI. Swap the `@helmrun` scope, strip

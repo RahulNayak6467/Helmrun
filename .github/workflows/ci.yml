@@ -1,0 +1,118 @@
+# Repository quality gate (phase 0, workstream P). Deployment CI/CD is phase 7.
+name: CI
+
+# Pushes to main, plus pull requests. A push to a PR branch is covered by
+# pull_request alone, so it doesn't run twice.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# On a PR, a newer push cancels the run it supersedes. On main every commit is
+# verified, so runs there queue instead of cancelling each other.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  quality:
+    name: Format, lint, typecheck, unit tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Versions match package.json (packageManager, engines) and .nvmrc.
+      - name: Install pinned pnpm and Node.js
+        uses: pnpm/setup@fbda4c85fc2e1e08721cd8763afea8f48d60f024 # v3.0.0
+        with:
+          version: 11.27.1
+          runtime: node@24.21.0
+          cache: true
+          install: false
+
+      - name: Verify toolchain versions
+        shell: bash
+        run: |
+          test "$(node --version)" = "v$(cat .nvmrc)"
+          test "$(pnpm --version)" = "11.27.1"
+
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Test-only values (decision 008), same file developers copy locally.
+      - name: Create test environment file
+        run: cp .env.test.example .env.test
+
+      - name: Check formatting
+        run: pnpm format:check
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Run unit tests
+        run: pnpm test:unit
+
+  integration:
+    name: Integration tests and build
+    needs: quality
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install pinned pnpm and Node.js
+        uses: pnpm/setup@fbda4c85fc2e1e08721cd8763afea8f48d60f024 # v3.0.0
+        with:
+          version: 11.27.1
+          runtime: node@24.21.0
+          cache: true
+          install: false
+
+      - name: Verify toolchain versions
+        shell: bash
+        run: |
+          test "$(node --version)" = "v$(cat .nvmrc)"
+          test "$(pnpm --version)" = "11.27.1"
+
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Create test environment file
+        run: cp .env.test.example .env.test
+
+      # The same test stack developers run locally (Postgres + Valkey, empty on
+      # every start). --wait blocks until both healthchecks pass.
+      - name: Start test stack
+        id: test-stack
+        run: docker compose -f docker-compose.test.yml --env-file .env.test up -d --wait
+
+      - name: Run test migrations
+        run: pnpm db:migrate:test
+
+      - name: Run integration tests
+        run: pnpm test:integration
+
+      - name: Build
+        run: pnpm build
+
+      # Only if the stack step ran: an earlier failure (install, checkout) leaves
+      # no stack and no .env.test, and this step would fail too.
+      - name: Show test stack logs on failure
+        if: failure() && steps.test-stack.outcome != 'skipped'
+        run: docker compose -f docker-compose.test.yml --env-file .env.test logs --no-color
