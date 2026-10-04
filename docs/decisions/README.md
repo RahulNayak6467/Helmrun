@@ -22,3 +22,4 @@ API/scheduler/worker processes) are listed in
 | 009 | [Env config split: shared pieces, app-owned combine, fail-closed parsing](009-env-config-split.md) | 0 | Accepted |
 | 010 | [Database package: typed pool, own logger interface, two query deadlines](010-database-package.md) | 0 | Accepted |
 | 011 | [Logging, request IDs, and the API entry point](011-logging-request-ids-entrypoint.md) | 0 | Accepted |
+| 012 | [Health, readiness, and graceful shutdown](012-health-readiness-graceful-shutdown.md) | 0 | Accepted |

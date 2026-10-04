@@ -17,7 +17,7 @@ const expectedDefaults = {
     requestTimeoutMs: 30_000,
     headersTimeoutMs: 20_000,
     keepAliveTimeoutMs: 5_000,
-    shutdownTimeoutMs: 10_000,
+    shutdownTimeoutMs: 20_000,
   },
   logging: { level: 'info', pretty: false },
   database: {
@@ -37,7 +37,7 @@ const explicitEnvironment = {
   HTTP_REQUEST_TIMEOUT_MS: '90000',
   HTTP_HEADERS_TIMEOUT_MS: '45000',
   HTTP_KEEP_ALIVE_TIMEOUT_MS: '7000',
-  SHUTDOWN_TIMEOUT_MS: '15000',
+  SHUTDOWN_TIMEOUT_MS: '50000',
   LOG_LEVEL: 'debug',
   LOG_PRETTY: 'true',
   DB_POOL_MAX: '20',
@@ -54,7 +54,7 @@ const expectedExplicitConfig = {
     requestTimeoutMs: 90_000,
     headersTimeoutMs: 45_000,
     keepAliveTimeoutMs: 7_000,
-    shutdownTimeoutMs: 15_000,
+    shutdownTimeoutMs: 50_000,
   },
   logging: { level: 'debug', pretty: true },
   database: {
@@ -172,9 +172,13 @@ describe('API configuration', () => {
 
     // Each timeout set to its own minimum: valid on its own and keeps the
     // header ≤ request rule satisfied, so only the field under test can fail.
-    const minimumTimeouts = Object.fromEntries(
-      timeoutContracts.map(({ field, minimum }) => [field, String(minimum)]),
-    );
+    // Database timeouts at their minimums too, so the shutdown > statement and
+    // readiness ≤ statement rules hold even with SHUTDOWN_TIMEOUT_MS at 1 s.
+    const minimumTimeouts = {
+      ...Object.fromEntries(timeoutContracts.map(({ field, minimum }) => [field, String(minimum)])),
+      DB_STATEMENT_TIMEOUT_MS: '100',
+      DB_READINESS_TIMEOUT_MS: '100',
+    };
 
     it.each(timeoutContracts)(
       'accepts both boundaries for $field',
@@ -263,6 +267,33 @@ describe('API configuration', () => {
         'DB_READINESS_TIMEOUT_MS',
         'Database readiness timeout must not exceed statement timeout',
       );
+    });
+
+    it.each([
+      ['lower than', '9999', false],
+      ['equal to', '10000', false],
+      ['greater than', '10001', true],
+    ])('shutdown timeout %s statement timeout → valid=%s', (_label, shutdown, valid) => {
+      const result = safeParse({
+        DB_STATEMENT_TIMEOUT_MS: '10000',
+        SHUTDOWN_TIMEOUT_MS: shutdown,
+      });
+
+      expect(result.success).toBe(valid);
+    });
+
+    it('reports the shutdown rule on SHUTDOWN_TIMEOUT_MS', () => {
+      expectFailureAt(
+        { DB_STATEMENT_TIMEOUT_MS: '45000', SHUTDOWN_TIMEOUT_MS: '10000' },
+        'SHUTDOWN_TIMEOUT_MS',
+        'Shutdown timeout must exceed database statement timeout',
+      );
+    });
+
+    it('keeps the default shutdown timeout above the default statement timeout', () => {
+      const config = parseConfig(requiredInput);
+
+      expect(config.server.shutdownTimeoutMs).toBeGreaterThan(config.database.statementTimeoutMs);
     });
 
     it('allows silent logging during tests', () => {

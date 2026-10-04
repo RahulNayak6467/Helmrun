@@ -30,10 +30,11 @@ const serverEnvSchema = z.object({
     fallback: 5_000,
     unit: 'milliseconds',
   }),
+  // Above the default statement timeout (15 s): see the shutdown rule below.
   SHUTDOWN_TIMEOUT_MS: integerEnv('SHUTDOWN_TIMEOUT_MS', {
     min: 1_000,
     max: 120_000,
-    fallback: 10_000,
+    fallback: 20_000,
     unit: 'milliseconds',
   }),
 });
@@ -77,6 +78,18 @@ export const apiEnvSchema = z
         code: 'custom',
         path: ['DB_READINESS_TIMEOUT_MS'],
         message: 'Database readiness timeout must not exceed statement timeout',
+      });
+    }
+
+    // Shutdown waits for in-flight requests. One still running a query the
+    // config allows must be able to finish before the deadline force-exits
+    // (exit 1, pool never closed). Doesn't cover several slow queries in one
+    // request; that needs per-request deadlines.
+    if (env.SHUTDOWN_TIMEOUT_MS <= env.DB_STATEMENT_TIMEOUT_MS) {
+      context.addIssue({
+        code: 'custom',
+        path: ['SHUTDOWN_TIMEOUT_MS'],
+        message: 'Shutdown timeout must exceed database statement timeout',
       });
     }
   })

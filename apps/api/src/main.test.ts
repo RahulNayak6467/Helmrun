@@ -42,7 +42,7 @@ describe('API entry point', () => {
     stubValidEnv(port);
     const { startServer } = await import('./main.js');
 
-    const server = startServer();
+    const { server } = startServer();
 
     try {
       await once(server, 'listening');
@@ -82,7 +82,7 @@ describe('API entry point', () => {
     stubValidEnv(port);
     const exit = vi.spyOn(process, 'exit').mockImplementation((() => undefined) as never);
     const { startServer } = await import('./main.js');
-    const server = startServer();
+    const { server } = startServer();
 
     try {
       await once(server, 'listening');
@@ -129,6 +129,121 @@ describe('API entry point', () => {
       child.kill('SIGTERM');
     }
   }, 15_000);
+
+  it('handles SIGTERM when run directly: closes HTTP, then the pool, and exits 0', async () => {
+    const port = await findFreePort();
+    stubValidEnv(port);
+    vi.stubEnv('LOG_LEVEL', 'info');
+    const apiRoot = resolve(import.meta.dirname, '..');
+    const child = spawn(
+      process.execPath,
+      ['--conditions=@helmrun/source', '--import', 'tsx', resolve(apiRoot, 'src/main.ts')],
+      { cwd: apiRoot, stdio: ['ignore', 'pipe', 'pipe'] },
+    );
+    let output = '';
+    child.stdout.on('data', (chunk: Buffer) => {
+      output += chunk.toString('utf8');
+    });
+
+    try {
+      await vi.waitFor(() => {
+        expect(output).toContain('http_server_listening');
+      }, 10_000);
+
+      const exited = once(child, 'exit');
+      child.kill('SIGTERM');
+      const [code] = (await exited) as [number | null];
+
+      expect(code).toBe(0);
+      expect(output).toContain('shutdown_started');
+      expect(output).toContain('shutdown_completed');
+      expect(output.indexOf('"step":"http_server"')).toBeLessThan(
+        output.indexOf('"step":"database_pool"'),
+      );
+    } finally {
+      child.kill('SIGKILL');
+    }
+  }, 15_000);
+
+  it.each(['uncaught_exception', 'unhandled_rejection'] as const)(
+    'on a fatal %s when run directly: logs it, runs both shutdown steps, and exits 1',
+    async (fault) => {
+      const port = await findFreePort();
+      stubValidEnv(port);
+      vi.stubEnv('LOG_LEVEL', 'info');
+      vi.stubEnv('HELMRUN_TEST_FAULT', fault);
+      const apiRoot = resolve(import.meta.dirname, '..');
+      const child = spawn(
+        process.execPath,
+        [
+          '--conditions=@helmrun/source',
+          '--import',
+          'tsx',
+          '--import',
+          resolve(apiRoot, 'test/support/fault-injection.ts'),
+          resolve(apiRoot, 'src/main.ts'),
+        ],
+        { cwd: apiRoot, stdio: ['ignore', 'pipe', 'pipe'] },
+      );
+      let output = '';
+      child.stdout.on('data', (chunk: Buffer) => {
+        output += chunk.toString('utf8');
+      });
+
+      try {
+        await vi.waitFor(() => {
+          expect(output).toContain('http_server_listening');
+        }, 10_000);
+
+        const exited = once(child, 'exit');
+        child.kill('SIGUSR2');
+        const [code] = (await exited) as [number | null];
+
+        expect(code).toBe(1);
+        expect(output).toContain('"event":"process_fatal_error"');
+        expect(output).toContain(`"fatalEventType":"${fault}"`);
+        expect(output).toContain('"step":"http_server"');
+        expect(output).toContain('"step":"database_pool"');
+        expect(output).toContain('shutdown_completed');
+        expect(output).not.toContain('shutdown_deadline_exceeded');
+      } finally {
+        child.kill('SIGKILL');
+      }
+    },
+    15_000,
+  );
+
+  it('does not install process-wide handlers when started from a test', async () => {
+    const port = await findFreePort();
+    stubValidEnv(port);
+    const before = process.listenerCount('SIGTERM');
+    const { startServer } = await import('./main.js');
+    const { server } = startServer();
+
+    try {
+      await once(server, 'listening');
+
+      expect(process.listenerCount('SIGTERM')).toBe(before);
+    } finally {
+      server.close();
+      await once(server, 'close');
+    }
+  });
+
+  it('stops listening and sets exit code 0 when shutdown is requested', async () => {
+    const port = await findFreePort();
+    stubValidEnv(port);
+    const processTarget = { exitCode: undefined, exit: vi.fn<(code: number) => never>() };
+    const { startServer } = await import('./main.js');
+    const { server, requestShutdown } = startServer(processTarget);
+    await once(server, 'listening');
+
+    await requestShutdown({ reason: 'signal', signal: 'SIGTERM', exitCode: 0 });
+
+    expect(server.listening).toBe(false);
+    expect(processTarget.exitCode).toBe(0);
+    expect(processTarget.exit).not.toHaveBeenCalled();
+  });
 
   it('exits with code 1 and reports field names (not values) when config is invalid', async () => {
     vi.stubEnv('NODE_ENV', 'test');

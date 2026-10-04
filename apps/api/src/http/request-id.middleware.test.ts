@@ -168,7 +168,11 @@ describe('requireRequestContext', () => {
 
 describe('createApp request ID integration', () => {
   it('sets its own request ID even on an unmatched route', async () => {
-    const app = createApp({ logger: silentLogger(), clock: systemClock });
+    const app = createApp({
+      logger: silentLogger(),
+      clock: systemClock,
+      checkReadiness: () => Promise.resolve({ status: 'ready' }),
+    });
 
     const response = await request(app).get('/not-configured').set(REQUEST_ID_HEADER, 'client-id');
 

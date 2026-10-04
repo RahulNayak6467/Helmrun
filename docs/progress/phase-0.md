@@ -3,11 +3,12 @@
 Spec: `docs/phases/phase-0-foundation.md`
 
 ## Status
-Spec steps 1–8 and 10–12 done (chunks 1 and 3): monorepo, config, local
-stacks, env validation, database pool, migrations, app/server split, request
-IDs, logging. Each reviewed fresh, all findings fixed. 241 unit + 9
-integration tests pass; lint, typecheck, format clean. Redis (step 9)
-deferred to the user.
+Spec steps 1–8, 10–12 and 14–15 done: monorepo, config, local stacks, env
+validation, database pool, migrations, app/server split, request IDs, logging,
+health/readiness, graceful shutdown. Each reviewed fresh, all findings fixed.
+307 unit + 13 integration tests pass; lint, typecheck, format, build clean.
+Left: step 13 (errors, design in progress), Redis (step 9, user), scheduler
+and worker shells, OpenAPI, CI, README.
 
 ## Done
 - Docs imported; AEC renamed to Helmrun across all docs (2026-10-03)
@@ -45,14 +46,29 @@ deferred to the user.
   path, monotonic duration); invalid-config exit, startup vs runtime server
   errors, realpath entry check (tsx-safe); fresh review fixed (decision 011,
   2026-10-04)
+- Steps 14–15 (ported by Claude at the user's request, from LLM-Gateway):
+  `packages/shared/src/lifecycle/` (lifecycle state, process handlers, generic
+  shutdown coordinator with named steps + unref'd deadline backstop),
+  `/health/live` + `/health/ready` (shared in-flight DB check, one public 503
+  shape), keep-alive-aware HTTP closer (`apps/api/src/http/server-closer.ts`),
+  `SHUTDOWN_TIMEOUT_MS` default 20 s and must exceed the statement timeout;
+  readiness integration tests on real Postgres; child-process tests for
+  SIGTERM and fatal errors (`test/support/fault-injection.ts`). Two fresh
+  reviews, all findings fixed (decision 012, 2026-10-04)
 
 ## Next step
-Chunk 4, step 13: error model. Design decision first: `AppError` base lives in
-`packages/shared` (generic), so who maps errors to HTTP status and the
-`{ error: { code, message, requestId } }` envelope? Then error + not-found
-middleware. Redis (step 9) stays deferred until the porting is done; the user
-writes it then (location decision still open) and adds it to readiness and
-shutdown.
+Step 13, error model: finish the design check. Agreed so far: `shared` stays
+transport-neutral (no `statusCode` on `AppError`); the API's error middleware
+maps errors to HTTP status. Pending (question 1b): instead of mapping each
+error code, every `AppError` declares a kind from a small closed list, and the
+API maps kind → status exhaustively. The user writes that list (each kind's
+HTTP status and whether it's transient). Then: envelope, unknown-error
+logging (pg `detail` leak), body-parser errors, not-found. Copyable from
+LLM-Gateway: `not-found.middleware.ts`, the invalid-JSON / payload-too-large
+checks.
+
+Local setup after this chunk: `.env` must set `SHUTDOWN_TIMEOUT_MS` above
+`DB_STATEMENT_TIMEOUT_MS` (e.g. 20000), or the API refuses to start.
 
 ## Porting plan (LLM-Gateway → Helmrun)
 One piece at a time, in spec order; `/review` after each; tests move with
@@ -63,10 +79,14 @@ their code. Split pieces (errors, graceful shutdown) get a design check first.
 - ~~10 app/server split~~ done
 - ~~11–12 request IDs, logging~~ done
 - 13 errors → `packages/shared` + `apps/api/src/http/error.middleware.ts` (split)
-- 14 health/readiness → `apps/api/src/health/`
-- 15 graceful shutdown → `packages/shared` helper + each `main.ts` (split)
+- ~~14 health/readiness~~ done
+- ~~15 graceful shutdown~~ done (scheduler/worker wire it when their shells exist)
 
 ## Before closing phase 0
+- Remaining spec work: Redis lifecycle (step 9, user; add to readiness and
+  shutdown as one more step), scheduler + worker shells (`main.ts` +
+  `config.ts`, start/log/shut down cleanly with the shared lifecycle helpers),
+  OpenAPI baseline (step 17), README (step 21).
 - Phase exit sequence (CLAUDE.md): `/review fresh` → failure experiments →
   study pack (concepts, theory questions, interview questions) → `/drill`.
 - Remove `passWithNoTests` from `vitest.config.ts` (real tests exist now).
@@ -92,8 +112,11 @@ their code. Split pieces (errors, graceful shutdown) get a design check first.
 - Step 13 (errors): `pino.stdSerializers.err` copies pg error fields like
   `detail` (`Key (email)=(...)`) into logs; redaction doesn't cover `err.*`.
   Decide how error logging strips them.
-- Error model: who maps errors to HTTP status, given `AppError` lives in
-  `shared` (decision 005 → Open).
+- Error model: list of error kinds, their HTTP statuses and transient flag
+  (see Next step). Direction agreed: API maps, `shared` stays transport-neutral
+  (decision 005 → Open, settle in step 13). Also: where domain error codes live,
+  since a single closed catalog in `shared` would pull Helmrun codes into a
+  generic package.
 - Redis client: inside `apps/api` for phase 0, or a package now (decision
   005 → Open).
 - Pre-commit hook: husky + lint-staged vs simple-git-hooks, or skip (spec
