@@ -21,3 +21,4 @@ API/scheduler/worker processes) are listed in
 | 008 | [Local stacks: dev persists, test starts empty; Valkey requires auth](008-local-stack-policy.md) | 0 | Accepted |
 | 009 | [Env config split: shared pieces, app-owned combine, fail-closed parsing](009-env-config-split.md) | 0 | Accepted |
 | 010 | [Database package: typed pool, own logger interface, two query deadlines](010-database-package.md) | 0 | Accepted |
+| 011 | [Logging, request IDs, and the API entry point](011-logging-request-ids-entrypoint.md) | 0 | Accepted |

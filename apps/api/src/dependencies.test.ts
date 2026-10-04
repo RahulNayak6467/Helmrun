@@ -1,0 +1,71 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const doubles = vi.hoisted(() => ({
+  createLogger: vi.fn(),
+  createPool: vi.fn(),
+  logger: { kind: 'fake-logger' },
+  pool: { kind: 'fake-pool' },
+}));
+
+vi.mock('@helmrun/logger', () => ({ createLogger: doubles.createLogger }));
+vi.mock('@helmrun/database', () => ({ createPool: doubles.createPool }));
+
+import { systemClock } from '@helmrun/shared';
+
+import { parseConfig } from './config.js';
+import { AGENT_PAYLOAD_REDACT_PATHS, createDependencies, SERVICE_NAME } from './dependencies.js';
+
+const config = parseConfig({
+  NODE_ENV: 'test',
+  DATABASE_URL: 'postgresql://helmrun_test:password@127.0.0.1:5441/helmrun_test',
+  LOG_LEVEL: 'debug',
+});
+
+describe('createDependencies', () => {
+  beforeEach(() => {
+    doubles.createLogger.mockReset().mockReturnValue(doubles.logger);
+    doubles.createPool.mockReset().mockReturnValue(doubles.pool);
+  });
+
+  it('builds one logger and one pool and exposes them with the config and clock', () => {
+    const dependencies = createDependencies(config);
+
+    expect(doubles.createLogger).toHaveBeenCalledOnce();
+    expect(doubles.createPool).toHaveBeenCalledOnce();
+    expect(dependencies).toEqual({
+      config,
+      logger: doubles.logger,
+      clock: systemClock,
+      databasePool: doubles.pool,
+    });
+  });
+
+  it('configures the logger from config, with the service name and agent payload redaction', () => {
+    createDependencies(config);
+
+    expect(doubles.createLogger).toHaveBeenCalledWith({
+      level: 'debug',
+      pretty: false,
+      service: SERVICE_NAME,
+      environment: 'test',
+      extraRedactPaths: AGENT_PAYLOAD_REDACT_PATHS,
+    });
+    expect(AGENT_PAYLOAD_REDACT_PATHS).toEqual(
+      expect.arrayContaining(['prompt', 'messages', 'llm.input', 'llm.output']),
+    );
+  });
+
+  it('gives the pool the database config, the logger, and the service name as application name', () => {
+    createDependencies(config);
+
+    expect(doubles.createPool).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: config.database.url,
+        poolMax: config.database.poolMax,
+        statementTimeoutMs: config.database.statementTimeoutMs,
+        applicationName: SERVICE_NAME,
+      }),
+      doubles.logger,
+    );
+  });
+});

@@ -3,9 +3,11 @@
 Spec: `docs/phases/phase-0-foundation.md`
 
 ## Status
-Spec steps 1–8 done (chunk 1 complete): monorepo, config, local stacks, env
-validation, database pool, and migration workflow — each reviewed fresh with
-all findings fixed. 157 unit + 9 integration tests pass; lint, typecheck clean.
+Spec steps 1–8 and 10–12 done (chunks 1 and 3): monorepo, config, local
+stacks, env validation, database pool, migrations, app/server split, request
+IDs, logging. Each reviewed fresh, all findings fixed. 241 unit + 9
+integration tests pass; lint, typecheck, format clean. Redis (step 9)
+deferred to the user.
 
 ## Done
 - Docs imported; AEC renamed to Helmrun across all docs (2026-10-03)
@@ -36,20 +38,30 @@ all findings fixed. 157 unit + 9 integration tests pass; lint, typecheck clean.
   real migrations on a throwaway DB) and the pool (application name,
   statement timeout, idle connection killed); fresh review fixed
   (decision 010, 2026-10-04)
+- Chunk 3 (steps 10–12): `packages/logger` (typed options, generic redaction
+  + app extras, wildcards), `Clock` with `monotonicMs` in `packages/shared`,
+  API `app.ts` / `dependencies.ts` / `main.ts`, request ID middleware (always
+  generated, client ID kept as `clientRequestId`), request logger (original
+  path, monotonic duration); invalid-config exit, startup vs runtime server
+  errors, realpath entry check (tsx-safe); fresh review fixed (decision 011,
+  2026-10-04)
 
 ## Next step
-Chunk 2, step 9: Redis lifecycle (new code). First the design decision:
-client inside `apps/api` or a package now. Then connect, auth, disconnect,
-plus tests against the test Valkey.
+Chunk 4, step 13: error model. Design decision first: `AppError` base lives in
+`packages/shared` (generic), so who maps errors to HTTP status and the
+`{ error: { code, message, requestId } }` envelope? Then error + not-found
+middleware. Redis (step 9) stays deferred until the porting is done; the user
+writes it then (location decision still open) and adds it to readiness and
+shutdown.
 
 ## Porting plan (LLM-Gateway → Helmrun)
 One piece at a time, in spec order; `/review` after each; tests move with
 their code. Split pieces (errors, graceful shutdown) get a design check first.
 - ~~5 env validation~~ done
 - ~~7–8 pool, migrations~~ done (transaction helper deferred to phase 1)
-- 9 Redis lifecycle → `apps/api/src/redis.ts` (new; see open question)
-- 10 app/server split → `apps/api/src/app.ts`, `main.ts`
-- 11–12 request IDs, logging → `apps/api/src/http/` + `packages/logger`
+- 9 Redis lifecycle → deferred; user writes it after the porting (location open)
+- ~~10 app/server split~~ done
+- ~~11–12 request IDs, logging~~ done
 - 13 errors → `packages/shared` + `apps/api/src/http/error.middleware.ts` (split)
 - 14 health/readiness → `apps/api/src/health/`
 - 15 graceful shutdown → `packages/shared` helper + each `main.ts` (split)
@@ -77,6 +89,9 @@ their code. Split pieces (errors, graceful shutdown) get a design check first.
 - `@helmrun/*` must stay a single find-and-replace away from another scope.
 
 ## Open questions
+- Step 13 (errors): `pino.stdSerializers.err` copies pg error fields like
+  `detail` (`Key (email)=(...)`) into logs; redaction doesn't cover `err.*`.
+  Decide how error logging strips them.
 - Error model: who maps errors to HTTP status, given `AppError` lives in
   `shared` (decision 005 → Open).
 - Redis client: inside `apps/api` for phase 0, or a package now (decision
