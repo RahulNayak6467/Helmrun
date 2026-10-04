@@ -15,6 +15,7 @@
   "dependencies": {
     "@helmrun/config": "workspace:*",
     "@helmrun/logger": "workspace:*",
-    "@helmrun/shared": "workspace:*"
+    "@helmrun/shared": "workspace:*",
+    "zod": "catalog:"
   }
 }

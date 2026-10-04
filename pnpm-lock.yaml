@@ -4,6 +4,12 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+catalogs:
+  default:
+    zod:
+      specifier: 4.6.5
+      version: 4.6.5
+
 importers:
 
   .:
@@ -57,7 +63,7 @@ importers:
         specifier: 5.11.1
         version: 5.11.1
       zod:
-        specifier: 4.6.5
+        specifier: 'catalog:'
         version: 4.6.5
     devDependencies:
       '@types/express':
@@ -81,6 +87,9 @@ importers:
       '@helmrun/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      zod:
+        specifier: 'catalog:'
+        version: 4.6.5
 
   apps/worker:
     dependencies:
@@ -93,11 +102,14 @@ importers:
       '@helmrun/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      zod:
+        specifier: 'catalog:'
+        version: 4.6.5
 
   packages/config:
-    dependencies:
+    devDependencies:
       zod:
-        specifier: 4.6.5
+        specifier: 'catalog:'
         version: 4.6.5
 
   packages/database:

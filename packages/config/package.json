@@ -17,7 +17,10 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run --root ../.. --passWithNoTests packages/config/"
   },
-  "dependencies": {
-    "zod": "4.6.5"
+  "peerDependencies": {
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "zod": "catalog:"
   }
 }

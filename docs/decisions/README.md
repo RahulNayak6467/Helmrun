@@ -19,3 +19,4 @@ API/scheduler/worker processes) are listed in
 | 006 | [Workspace packages resolve to source in dev, dist in production](006-workspace-package-resolution.md) | 0 | Accepted |
 | 007 | [Local service images: Postgres 18 and Valkey](007-local-service-images.md) | 0 | Accepted |
 | 008 | [Local stacks: dev persists, test starts empty; Valkey requires auth](008-local-stack-policy.md) | 0 | Accepted |
+| 009 | [Env config split: shared pieces, app-owned combine, fail-closed parsing](009-env-config-split.md) | 0 | Accepted |

@@ -1,0 +1,26 @@
+// Project settings for Zed. Hides node_modules so workspace packages are only
+// ever opened from packages/, never through their node_modules symlinks.
+// This list replaces Zed's defaults, so the default entries are repeated.
+{
+  "file_scan_exclusions": [
+    "**/node_modules",
+    "**/.git",
+    "**/.svn",
+    "**/.hg",
+    "**/.jj",
+    "**/CVS",
+    "**/.DS_Store",
+    "**/Thumbs.db",
+    "**/.classpath",
+    "**/.settings"
+  ],
+  // Use the project's TypeScript (the version `pnpm typecheck` runs) instead of
+  // Zed's bundled one, so editor errors match the terminal.
+  "lsp": {
+    "vtsls": {
+      "settings": {
+        "typescript": { "tsdk": "node_modules/typescript/lib" }
+      }
+    }
+  }
+}

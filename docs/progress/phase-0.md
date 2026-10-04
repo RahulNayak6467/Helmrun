@@ -3,41 +3,42 @@
 Spec: `docs/phases/phase-0-foundation.md`
 
 ## Status
-Monorepo skeleton, config, and local stacks done (spec steps 1–4 and 6).
-`pnpm lint`, `typecheck`, and `format:check` pass. No application code yet.
+Spec steps 1–6 done: monorepo, config scaffolding, local stacks, and
+environment validation (ported, reviewed fresh, all findings fixed). 147 unit
+tests pass; lint, typecheck, format clean.
 
 ## Done
 - Docs imported; AEC renamed to Helmrun across all docs (2026-10-03)
 - Monorepo layout and test placement decided (decision 004, 2026-10-03)
 - Target folder structure + phase 0 layout decided (decision 005, 2026-10-03)
-- Claude Code workflow: `CLAUDE.md` (working agreement, feature workflow),
-  Mentor output style, `reviewer` + `tester` agents, `/problem` `/review`
-  `/wrap` `/drill`, review rubric with phase 0 entry, session-context and
-  edit-guard hooks (2026-10-03)
+- Claude Code workflow: `CLAUDE.md`, Mentor style, `reviewer` + `tester`
+  agents, `/problem` `/review` `/wrap` `/drill`, review rubric, hooks
+  (2026-10-03)
 - `.gitignore` covering all phases; `/wrap` commit safety check (2026-10-03)
 - Worked example of the feature workflow: `docs/guides/workflow-walkthrough.md`
   (2026-10-03)
-- Phase 0 folders created per decision 005 (2026-10-03)
-- Root + workspace config: pnpm workspace, `tsconfig` base/build per
-  workspace, Vitest projects (unit/integration), ESLint with dependency-
-  direction rules, Prettier, `.nvmrc`, env examples (2026-10-03)
-- Package resolution: source in dev, `dist/` in prod (decision 006), verified
-  in a scratch copy (2026-10-03)
-- Local images: Postgres 18.6, Valkey 9.1.2 (decision 007, 2026-10-03)
-- Dev + test compose stacks written, reviewed, and running healthy; test stack
-  starts empty, Valkey auth on (decision 008, 2026-10-04)
+- Phase 0 folders, root + workspace config (decisions 005, 006), local images
+  and compose stacks (decisions 007, 008) (2026-10-03 – 2026-10-04)
+- Env validation (step 5): `packages/config` pieces + `integerEnv`,
+  `apps/api/src/config.ts` combine-then-refine, tests ported from
+  LLM-Gateway and split per workspace; fresh review fixed (NODE_ENV required,
+  bounded durations, strict digits, zod catalog) (decision 009, 2026-10-04)
+- Root scripts use `pnpm -r run …` (pnpm 11's built-in `clean` shadowed the
+  script) (2026-10-04)
+- Zed project settings: hide `node_modules`, use the project's TypeScript
+  (`.zed/settings.json`) (2026-10-04)
+- Phase exit sequence added to `CLAUDE.md`: fresh review → failure
+  experiments → study pack → `/drill` (2026-10-04)
 
 ## Next step
-Explain the monorepo setup back (workspaces, `exports` conditions, build vs
-typecheck configs), then `/problem` on spec step 5: environment validation,
-porting LLM-Gateway `src/config/` into `packages/config` + each app's
-`src/config.ts`.
+Settle branching (one branch per workstream?), then step 7: port the
+database pool into `packages/database` with a typed `DatabaseOptions`
+(decision 009), then migrations (step 8).
 
 ## Porting plan (LLM-Gateway → Helmrun)
 One piece at a time, in spec order; `/review` after each; tests move with
-their code. Split pieces (config, errors, graceful shutdown) get a design
-check first.
-- 5 env validation → `packages/config` + each app's `src/config.ts` (split)
+their code. Split pieces (errors, graceful shutdown) get a design check first.
+- ~~5 env validation~~ done
 - 7–8 pool, migrations → `packages/database`
 - 9 Redis lifecycle → `apps/api/src/redis.ts` (new; see open question)
 - 10 app/server split → `apps/api/src/app.ts`, `main.ts`
@@ -47,7 +48,9 @@ check first.
 - 15 graceful shutdown → `packages/shared` helper + each `main.ts` (split)
 
 ## Before closing phase 0
-- Remove `passWithNoTests` from `vitest.config.ts` once real tests exist.
+- Phase exit sequence (CLAUDE.md): `/review fresh` → failure experiments →
+  study pack (concepts, theory questions, interview questions) → `/drill`.
+- Remove `passWithNoTests` from `vitest.config.ts` (real tests exist now).
 - Write `.github/workflows/ci.yml` (currently empty) running `pnpm validate`
   with the test stack (CI workstream P).
 - Add `gitleaks` secret scanning to CI, once the foundation files are imported
@@ -64,6 +67,9 @@ check first.
 - `@helmrun/*` must stay a single find-and-replace away from another scope.
 
 ## Open questions
+- Branching: one branch per workstream (`p0/database`, …) merged into `main`?
+  `/review` and `reviewer` default to `git diff main...HEAD`, which is empty on
+  `main`. Settle before step 7; then add the rule to `CLAUDE.md`.
 - Error model: who maps errors to HTTP status, given `AppError` lives in
   `shared` (decision 005 → Open).
 - Redis client: inside `apps/api` for phase 0, or a package now (decision
@@ -71,6 +77,10 @@ check first.
 - Pre-commit hook: husky + lint-staged vs simple-git-hooks, or skip (spec
   says optional; CI is the real gate).
 - One script that starts the test stack and runs test migrations together.
+- Integration tests (step 7+): `.env.test` defines `TEST_DATABASE_URL`, not
+  `DATABASE_URL`, and `process.loadEnvFile` doesn't override variables already
+  set in the shell. When tests build an app config, make sure a `DATABASE_URL`
+  exported in the shell can't point them at the dev database.
 
 ## Interview weak spots
 - (filled by /drill)

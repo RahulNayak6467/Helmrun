@@ -19,7 +19,7 @@
     "@helmrun/shared": "workspace:*",
     "express": "5.2.1",
     "ioredis": "5.11.1",
-    "zod": "4.6.5"
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@types/express": "5.0.6",

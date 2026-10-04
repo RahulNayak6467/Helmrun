@@ -11,9 +11,9 @@
   },
   "scripts": {
     "dev": "pnpm --filter @helmrun/api dev",
-    "build": "pnpm -r build",
-    "clean": "pnpm -r clean",
-    "typecheck": "pnpm -r typecheck",
+    "build": "pnpm -r run build",
+    "clean": "pnpm -r run clean",
+    "typecheck": "pnpm -r run typecheck",
     "lint": "eslint . --max-warnings 0",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

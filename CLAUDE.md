@@ -42,7 +42,14 @@ Full worked example: `docs/guides/workflow-walkthrough.md`.
    implements them and proposes extras; the user picks which to add.
 6. **`/wrap`**: progress, decisions, commit message.
 
-End of phase: `/review fresh` (independent `reviewer` pass), then `/drill`.
+End of phase, in order:
+1. `/review fresh` (independent `reviewer` pass) until no important issues remain.
+2. The user runs the phase spec's failure experiments.
+3. You prepare the phase study pack: concepts to read (with sources), theory
+   questions, and likely interview questions, all grounded in what was built
+   and decided in that phase. The user works through it.
+4. `/drill` to check the study pack landed; weak spots go to the phase file.
+5. Only then move to the next phase.
 
 **What you may write:** root/package config scaffolding (`package.json`,
 `tsconfig*.json`, `pnpm-workspace.yaml`), docs, tests (via `tester`), and
