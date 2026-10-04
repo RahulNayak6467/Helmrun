@@ -2,7 +2,7 @@
   "name": "@helmrun/database",
   "version": "0.0.0",
   "private": true,
-  "description": "PostgreSQL pool, transaction helper, health query, and migrations",
+  "description": "PostgreSQL pool, health query, and migrations",
   "type": "module",
   "exports": {
     ".": {

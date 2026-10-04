@@ -43,6 +43,8 @@ and `/wrap` must surface the items listed for it.
 
 | Phase | Item | Source |
 |---|---|---|
+| 1 | Write the transaction helper in `packages/database` (user writes it) | Decision 010 |
+| 1 | Decide branching: one branch per workstream merged into `main`; add the rule to `CLAUDE.md` (`/review` defaults to `git diff main...HEAD`) | Phase 0 discussion |
 | 3 | Add top-level `tests/e2e/` for cross-app tests (API → SQS → worker) | Decision 004 |
 | 3 | Decide where run-state transition logic lives (shared by API, scheduler, worker, recovery) | Decision 005 |
 | 5 | Create `apps/runtime` (sandbox entrypoint, helmrun-runtime image) | Decision 005 |

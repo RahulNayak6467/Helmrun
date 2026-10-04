@@ -3,9 +3,9 @@
 Spec: `docs/phases/phase-0-foundation.md`
 
 ## Status
-Spec steps 1–6 done: monorepo, config scaffolding, local stacks, and
-environment validation (ported, reviewed fresh, all findings fixed). 147 unit
-tests pass; lint, typecheck, format clean.
+Spec steps 1–8 done (chunk 1 complete): monorepo, config, local stacks, env
+validation, database pool, and migration workflow — each reviewed fresh with
+all findings fixed. 157 unit + 9 integration tests pass; lint, typecheck clean.
 
 ## Done
 - Docs imported; AEC renamed to Helmrun across all docs (2026-10-03)
@@ -29,17 +29,24 @@ tests pass; lint, typecheck, format clean.
   (`.zed/settings.json`) (2026-10-04)
 - Phase exit sequence added to `CLAUDE.md`: fresh review → failure
   experiments → study pack → `/drill` (2026-10-04)
+- Chunk 1 (steps 7–8): `packages/database` pool with typed options, own
+  logger interface, server + client query deadlines, idle-error listener,
+  health query; UTC bootstrap migration; ported unit tests; integration tests
+  for migrations (rerun no-op, failed-migration rollback, concurrent runners,
+  real migrations on a throwaway DB) and the pool (application name,
+  statement timeout, idle connection killed); fresh review fixed
+  (decision 010, 2026-10-04)
 
 ## Next step
-Settle branching (one branch per workstream?), then step 7: port the
-database pool into `packages/database` with a typed `DatabaseOptions`
-(decision 009), then migrations (step 8).
+Chunk 2, step 9: Redis lifecycle (new code). First the design decision:
+client inside `apps/api` or a package now. Then connect, auth, disconnect,
+plus tests against the test Valkey.
 
 ## Porting plan (LLM-Gateway → Helmrun)
 One piece at a time, in spec order; `/review` after each; tests move with
 their code. Split pieces (errors, graceful shutdown) get a design check first.
 - ~~5 env validation~~ done
-- 7–8 pool, migrations → `packages/database`
+- ~~7–8 pool, migrations~~ done (transaction helper deferred to phase 1)
 - 9 Redis lifecycle → `apps/api/src/redis.ts` (new; see open question)
 - 10 app/server split → `apps/api/src/app.ts`, `main.ts`
 - 11–12 request IDs, logging → `apps/api/src/http/` + `packages/logger`
@@ -61,15 +68,15 @@ their code. Split pieces (errors, graceful shutdown) get a design check first.
   Helmrun-specific parts. ~2–3h.
 
 ## Rules during phase 0
+- Repo initialization happens on `main` (branching deferred to phase 1). Run
+  `/review` before committing each chunk: on `main` it only sees uncommitted
+  changes.
 - Foundation packages (`config`, `logger`, `shared`, most of `database`) stay
   generic: no runs/agents/tenants logic, no Helmrun names in env defaults or
   log fields.
 - `@helmrun/*` must stay a single find-and-replace away from another scope.
 
 ## Open questions
-- Branching: one branch per workstream (`p0/database`, …) merged into `main`?
-  `/review` and `reviewer` default to `git diff main...HEAD`, which is empty on
-  `main`. Settle before step 7; then add the rule to `CLAUDE.md`.
 - Error model: who maps errors to HTTP status, given `AppError` lives in
   `shared` (decision 005 → Open).
 - Redis client: inside `apps/api` for phase 0, or a package now (decision

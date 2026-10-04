@@ -3,6 +3,11 @@
 ## Open
 
 ## Done
+- [x] packages/database/src/pool.ts — client-side `query_timeout` = statement timeout + 2 s, so a query on a silently dead connection releases its pool slot instead of hanging until OS keepalive gives up (fixed 2026-10-04)
+- [x] packages/database/test/integration/migrations.integration.test.ts — real migrations replayed onto the already-migrated shared test DB; now run against a throwaway database created and dropped by the test, and the UTC check reads `pg_db_role_setting` (fixed 2026-10-04)
+- [x] packages/database/test/integration/*.integration.test.ts — `afterAll` no longer throws a second error when setup failed before the pool existed (fixed 2026-10-04)
+- [x] packages/database/test/integration/migrations.integration.test.ts — runner flags derived from the `migrate:test:up` script instead of copied by hand (fixed 2026-10-04)
+- [x] packages/database/package.json:5 — description no longer advertises the deferred transaction helper (fixed 2026-10-04)
 - [x] packages/config/src/environment.ts — `NODE_ENV` required (no default); missing value fails closed instead of running as development (fixed 2026-10-04)
 - [x] apps/api/src/config.ts — server durations bounded (≤ 300,000 ms, far below Node's 2^31-1 ms timer limit) with field-specific messages, via shared `integerEnv` (fixed 2026-10-04)
 - [x] packages/config/src/database.ts — empty `DATABASE_URL` reports one issue (`abort: true` on `.min(1)`) (fixed 2026-10-04)

@@ -20,3 +20,4 @@ API/scheduler/worker processes) are listed in
 | 007 | [Local service images: Postgres 18 and Valkey](007-local-service-images.md) | 0 | Accepted |
 | 008 | [Local stacks: dev persists, test starts empty; Valkey requires auth](008-local-stack-policy.md) | 0 | Accepted |
 | 009 | [Env config split: shared pieces, app-owned combine, fail-closed parsing](009-env-config-split.md) | 0 | Accepted |
+| 010 | [Database package: typed pool, own logger interface, two query deadlines](010-database-package.md) | 0 | Accepted |
