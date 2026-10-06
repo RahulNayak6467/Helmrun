@@ -103,9 +103,12 @@ everything that doesn't depend on the error model first, step 13 last.
    step 13. User is leaning towards a handwritten YAML spec (not decided);
    if so, add a contract test (responses validated against the YAML) and a
    route-coverage test so the spec can't drift.
-6. CI extras: `gitleaks` secret scanning; pre-commit hook or not; guard
-   against a shell `DATABASE_URL` reaching tests. (`pnpm test:stack` done
-   2026-10-07.)
+6. ~~CI extras~~ done 2026-10-07 (Claude): gitleaks job in CI (full history,
+   image pinned by digest; history scanned clean); pre-commit hook
+   (simple-git-hooks + lint-staged: Prettier + ESLint on staged files,
+   installed by the root `prepare` script); `vitest.config.ts` refuses to run
+   tests if `NODE_ENV` isn't `test` or a shell `DATABASE_URL` points at a
+   database not ending in `_test`; `pnpm test:stack`.
 7. Step 13, errors (last). Agreed so far: `shared` stays transport-neutral
    (no `statusCode` on `AppError`); the API's error middleware maps errors to
    HTTP status. Pending (question 1b): every `AppError` declares a kind from a
@@ -150,12 +153,6 @@ IDs + logging (11–12), health/readiness (14), graceful shutdown (15).
   (decision 005 → Open, settle in step 13). Also: where domain error codes live,
   since a single closed catalog in `shared` would pull Helmrun codes into a
   generic package.
-- Pre-commit hook: husky + lint-staged vs simple-git-hooks, or skip (spec
-  says optional; CI is the real gate).
-- Integration tests (step 7+): `.env.test` defines `TEST_DATABASE_URL`, not
-  `DATABASE_URL`, and `process.loadEnvFile` doesn't override variables already
-  set in the shell. When tests build an app config, make sure a `DATABASE_URL`
-  exported in the shell can't point them at the dev database.
 
 ## Interview weak spots
 - (filled by /drill)

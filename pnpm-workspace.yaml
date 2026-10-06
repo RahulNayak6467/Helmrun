@@ -15,3 +15,4 @@ catalog:
 # vite) ships prebuilt binaries as optional dependencies, so its script isn't needed.
 allowBuilds:
   esbuild: false
+  simple-git-hooks: false

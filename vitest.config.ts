@@ -8,6 +8,30 @@ import { defineConfig } from 'vitest/config';
 const testEnvFile = resolve(import.meta.dirname, '.env.test');
 if (existsSync(testEnvFile)) process.loadEnvFile(testEnvFile);
 
+// loadEnvFile doesn't override shell variables: never let a real database reach tests.
+const refuseToRunTests = (reason: string): never => {
+  throw new Error(`Refusing to run tests: ${reason}`);
+};
+
+if (process.env.NODE_ENV !== undefined && process.env.NODE_ENV !== 'test') {
+  refuseToRunTests(`NODE_ENV is "${process.env.NODE_ENV}", expected "test"`);
+}
+
+const shellDatabaseUrl = process.env.DATABASE_URL;
+if (shellDatabaseUrl !== undefined) {
+  let databaseName = '';
+  try {
+    databaseName = decodeURIComponent(new URL(shellDatabaseUrl).pathname.slice(1));
+  } catch {
+    refuseToRunTests('DATABASE_URL is set but is not a valid URL; unset it');
+  }
+  if (!databaseName.endsWith('_test')) {
+    refuseToRunTests(
+      `DATABASE_URL points at database "${databaseName}", which doesn't end in _test; unset it`,
+    );
+  }
+}
+
 // Resolve workspace packages to their TypeScript source (see tsconfig.base.json),
 // keeping Vite's default conditions so npm packages resolve normally.
 const conditions = ['@helmrun/source', ...defaultServerConditions];

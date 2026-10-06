@@ -25,13 +25,23 @@
     "db:migrate:create": "pnpm --filter @helmrun/database migrate:create",
     "db:migrate:test": "pnpm --filter @helmrun/database migrate:test:up",
     "test:stack": "docker compose -f docker-compose.test.yml --env-file .env.test up -d --wait && pnpm db:migrate:test",
-    "validate": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build"
+    "validate": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
+    "prepare": "simple-git-hooks"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "pnpm exec lint-staged"
+  },
+  "lint-staged": {
+    "*": "prettier --write --ignore-unknown",
+    "*.{ts,js}": "eslint --max-warnings 0"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
     "@types/node": "24.19.1",
     "eslint": "10.11.0",
+    "lint-staged": "17.6.0",
     "prettier": "3.9.9",
+    "simple-git-hooks": "2.14.0",
     "tsx": "4.23.15",
     "typescript": "6.0.3",
     "typescript-eslint": "8.71.0",
