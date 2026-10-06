@@ -1,5 +1,6 @@
-import { Router } from 'express';
+import { Router, type Response } from 'express';
 
+import type { LiveResponse, NotReadyResponse, ReadyResponse } from './health.schemas.js';
 import type { ReadinessChecker } from './readiness.js';
 
 // Mounted at /health. Probe answers must never be cached by a proxy.
@@ -8,14 +9,15 @@ export const createHealthRoutes = (checkReadiness: ReadinessChecker): Router => 
 
   // Liveness: the process can serve HTTP. Touches no dependency, so a database
   // outage makes the API not-ready instead of getting it restarted.
-  router.get('/live', (_request, response) => {
+  router.get('/live', (_request, response: Response<LiveResponse>) => {
     response.setHeader('Cache-Control', 'no-store');
     response.status(200).json({ status: 'ok' });
   });
 
   // Readiness: one public 503 shape for every reason. The reason is logged by
-  // the checker, not shown to unauthenticated callers.
-  router.get('/ready', async (_request, response) => {
+  // the checker, not shown to unauthenticated callers. The union type can't tie
+  // a body to its status code; only a test against the OpenAPI document can.
+  router.get('/ready', async (_request, response: Response<ReadyResponse | NotReadyResponse>) => {
     const result = await checkReadiness();
 
     response.setHeader('Cache-Control', 'no-store');

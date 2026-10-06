@@ -10,7 +10,8 @@
     "clean": "node --eval \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
     "start": "node --enable-source-maps dist/main.js",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "vitest run --root ../.. --passWithNoTests apps/api/"
+    "test": "vitest run --root ../.. --passWithNoTests apps/api/",
+    "openapi:generate": "node --conditions=@helmrun/source --import tsx scripts/generate-openapi.ts && prettier --write --log-level warn openapi.json"
   },
   "dependencies": {
     "@helmrun/config": "workspace:*",
@@ -19,7 +20,8 @@
     "@helmrun/redis": "workspace:*",
     "@helmrun/shared": "workspace:*",
     "express": "5.2.1",
-    "zod": "catalog:"
+    "zod": "catalog:",
+    "zod-openapi": "6.0.2"
   },
   "devDependencies": {
     "@types/express": "5.0.6",

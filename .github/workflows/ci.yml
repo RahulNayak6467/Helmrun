@@ -84,6 +84,11 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      # The spec is generated from the Zod schemas (decision 014); a stale
+      # committed copy means a contract change skipped review.
+      - name: Check OpenAPI spec is up to date
+        run: pnpm openapi:check
+
       - name: Run unit tests
         run: pnpm test:unit
 

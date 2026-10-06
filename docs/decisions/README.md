@@ -24,3 +24,4 @@ API/scheduler/worker processes) are listed in
 | 011 | [Logging, request IDs, and the API entry point](011-logging-request-ids-entrypoint.md) | 0 | Accepted |
 | 012 | [Health, readiness, and graceful shutdown](012-health-readiness-graceful-shutdown.md) | 0 | Accepted |
 | 013 | [Redis client package: degrade, never fail](013-redis-client-package.md) | 0 | Accepted |
+| 014 | [OpenAPI generated from Zod schemas](014-openapi-from-zod.md) | 0 | Accepted |

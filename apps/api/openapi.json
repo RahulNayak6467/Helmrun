@@ -1,0 +1,151 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Helmrun API",
+    "version": "0.1.0",
+    "description": "Control-plane API for running AI agents."
+  },
+  "tags": [
+    {
+      "name": "health",
+      "description": "Liveness and readiness probes"
+    }
+  ],
+  "paths": {
+    "/health/live": {
+      "get": {
+        "operationId": "getLiveness",
+        "tags": ["health"],
+        "summary": "Liveness probe",
+        "description": "Checks no dependencies: a database outage must not restart the API.",
+        "responses": {
+          "200": {
+            "description": "The process is alive.",
+            "headers": {
+              "x-request-id": {
+                "description": "ID of this request; quote it when reporting a problem.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Cache-Control": {
+                "description": "Probe answers are never cached.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["no-store"]
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LiveResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "operationId": "getReadiness",
+        "tags": ["health"],
+        "summary": "Readiness probe",
+        "description": "One public 503 shape for every reason; the reason is only logged.",
+        "responses": {
+          "200": {
+            "description": "Ready to serve traffic.",
+            "headers": {
+              "x-request-id": {
+                "description": "ID of this request; quote it when reporting a problem.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Cache-Control": {
+                "description": "Probe answers are never cached.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["no-store"]
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadyResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Not ready: draining, or a dependency is unavailable.",
+            "headers": {
+              "x-request-id": {
+                "description": "ID of this request; quote it when reporting a problem.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Cache-Control": {
+                "description": "Probe answers are never cached.",
+                "schema": {
+                  "type": "string",
+                  "enum": ["no-store"]
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotReadyResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "LiveResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "ok"
+          }
+        },
+        "required": ["status"],
+        "additionalProperties": false,
+        "description": "The process is up and serving HTTP."
+      },
+      "ReadyResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "ready"
+          }
+        },
+        "required": ["status"],
+        "additionalProperties": false,
+        "description": "The API can serve traffic."
+      },
+      "NotReadyResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "not_ready"
+          }
+        },
+        "required": ["status"],
+        "additionalProperties": false,
+        "description": "The API should not receive traffic (draining or a dependency is down)."
+      }
+    }
+  }
+}

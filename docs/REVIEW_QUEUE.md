@@ -4,6 +4,10 @@
 15. [small] packages/redis/src/redis.ts — closing a client that's reconnecting after a lost connection doesn't log `redis_closed` (no `end` from ioredis; same cause as the known never-connected case). Note only.
 
 ## Done
+- [x] apps/api/src/http/openapi/document.ts — spec omitted the `x-request-id` response header set on every response; now in a shared `commonResponseHeaders` every operation spreads in (fixed 2026-10-07, Claude)
+- [x] apps/api/package.json / document.ts — builder ships unused in `dist/`, `zod-openapi` a runtime dependency; kept on purpose (tests import it, serving later needs no move), recorded in decision 014 (closed 2026-10-07)
+- [x] apps/api/src/health/health.routes.ts — comment claimed a contract test that doesn't exist yet; reworded (fixed 2026-10-07, Claude)
+- [x] package.json `openapi:check` — untracked/stale file failed with git's bare pathspec error; now prints what to do (fixed 2026-10-07, Claude)
 - [x] apps/{api,worker,scheduler}/src/config.ts — the two logging rules were copied three times; now one generic `applyLoggerRules` in `packages/config/src/logging-rules.ts`, called from each app's `superRefine`; decision 009 updated (fixed 2026-10-07, Claude)
 - [x] apps/{worker,scheduler}/src/config.ts — identical `SHUTDOWN_TIMEOUT_MS` piece kept app-owned on purpose (API bounds differ; worker's follows run drain in phase 3); recorded in decision 009 (closed 2026-10-07)
 - [x] packages/config/src/redis.ts — REDIS_URL with a query string or fragment is rejected at startup (ioredis would let `?db=`, `?enableOfflineQueue=`, `?commandTimeout=` override the code's options); tests added (fixed 2026-10-07, Claude)

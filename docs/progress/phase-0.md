@@ -4,9 +4,9 @@ Spec: `docs/phases/phase-0-foundation.md`
 
 ## Status
 Spec steps 1–12, 14–15, 19 and 21 done, plus CI extras and the scheduler/worker
-shells (reviewed fresh, no important issues; tests still to write). Left:
-shell/helper tests, OpenAPI (step 17), then step 13 (errors) last, then the
-exit sequence.
+shells and the OpenAPI baseline (step 17), each reviewed fresh with no
+important issues. Left: tests for the shells, helpers, and OpenAPI; then
+step 13 (errors) last, then the exit sequence.
 
 ## Done
 - Docs imported; AEC renamed to Helmrun across all docs (2026-10-03)
@@ -75,21 +75,36 @@ exit sequence.
   updated). Smoke-tested built shells (alive, SIGTERM → exit 0 at once, bad
   config → exit 1). Fresh review: no important issues, 2 small closed
   (2026-10-07)
+- OpenAPI baseline, step 17 (Claude wrote it at the user's request; decision
+  014): spec generated from Zod with `zod-openapi`; `health.schemas.ts`
+  (named components), handlers typed `Response<z.infer<…>>` so a wrong body
+  doesn't compile; pure `buildOpenApiDocument()` in
+  `apps/api/src/http/openapi/document.ts` (contract version 0.1.0, shared
+  `x-request-id` header, no-store on probes); `apps/api/scripts/generate-openapi.ts`
+  writes the committed `apps/api/openapi.json` (Prettier-formatted,
+  deterministic); `pnpm openapi:check` in CI fails on a stale or untracked
+  file. Fresh review: no important issues, 4 small fixed (2026-10-07)
 
 ## Next step
 The user's plan for the rest of phase 0 (2026-10-07): three steps, easy →
 medium → hard, then the exit sequence.
 - **Easy: done**, committed, CI green (item 6 below: gitleaks, pre-commit
   hook, test DB guard).
-- **Medium: in progress.** Shells done. Next: the user writes test cases in
-  plain English for `loadConfigOrExit` (valid → returned; Zod error → one
-  JSON line, no rejected values, exit 1; non-Zod error rethrown, nothing
-  written), `isEntryPoint` (undefined, missing path, symlink to module,
-  other file), shell configs (defaults, logging rules, timeout bounds), and
-  one shutdown test per shell (fake process target, SIGTERM → exit 0,
-  interval cleared); `tester` implements. Then the OpenAPI baseline (item 5):
-  ask the user first, handwritten YAML (leaning) or generated from Zod; then
-  `/review fresh`.
+- **Medium: code done, tests pending.** Shells and OpenAPI baseline written
+  and fresh-reviewed. Next: the user writes test cases in plain English;
+  `tester` implements:
+  - `loadConfigOrExit` (valid → returned; Zod error → one JSON line, no
+    rejected values, exit 1; non-Zod error rethrown, nothing written),
+    `isEntryPoint` (undefined, missing path, symlink to module, other file),
+    shell configs (defaults, logging rules, timeout bounds), one shutdown
+    test per shell (fake process target, SIGTERM → exit 0, interval cleared).
+  - OpenAPI: `/ready` contract test (each status's body validates against
+    its schema in `buildOpenApiDocument()`), and a route-coverage test
+    (needs a design first: Express has no public route list, so something
+    must be the single list that both mounts and documents routes).
+  - README "API contract" section (user-owned): `openapi.json` is generated
+    and committed; `pnpm openapi:generate` after route changes; CI runs
+    `pnpm openapi:check`.
 - **Hard:** step 13, errors (item 7), the user writes it; then its follow-ups.
 - **Exit sequence:** `/review fresh` over the phase → failure experiments
   (user) → study pack → `/drill`.
@@ -124,11 +139,8 @@ everything that doesn't depend on the error model first, step 13 last.
 3. ~~Redis lifecycle (step 9)~~ done 2026-10-07 (decision 013; design and
    review details there and in `docs/REVIEW_QUEUE.md`).
 4. ~~Scheduler + worker shells~~ written 2026-10-07 (see Done); tests pending.
-5. OpenAPI baseline (step 17): tool choice and how schemas stay aligned with
-   Zod; document the health endpoints. The error-response schema waits for
-   step 13. User is leaning towards a handwritten YAML spec (not decided);
-   if so, add a contract test (responses validated against the YAML) and a
-   route-coverage test so the spec can't drift.
+5. ~~OpenAPI baseline (step 17)~~ written 2026-10-07 (see Done; decision
+   014); tests pending. The error-response schema waits for step 13.
 6. ~~CI extras~~ done 2026-10-07 (Claude): gitleaks job in CI (full history,
    image pinned by digest; history scanned clean); pre-commit hook
    (simple-git-hooks + lint-staged: Prettier + ESLint on staged files,
@@ -171,6 +183,11 @@ IDs + logging (11–12), health/readiness (14), graceful shutdown (15).
 - `@helmrun/*` must stay a single find-and-replace away from another scope.
 
 ## Open questions
+- OpenAPI, before phase 1 resources: Zod 4 emits `additionalProperties: false`
+  for every response object, so a strict generated client treats any added
+  field as an error (adding a field becomes breaking). `z.looseObject` fixes
+  the spec but adds an index signature that kills the excess-property check
+  on handlers. Decide how responses stay extensible.
 - Step 13 (errors): `pino.stdSerializers.err` copies pg error fields like
   `detail` (`Key (email)=(...)`) into logs; redaction doesn't cover `err.*`.
   Decide how error logging strips them.
