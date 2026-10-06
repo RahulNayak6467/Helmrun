@@ -1,5 +1,6 @@
 import * as z from 'zod';
 import {
+  applyLoggerRules,
   databaseEnvSchema,
   environmentEnvSchema,
   integerEnv,
@@ -60,21 +61,7 @@ export const apiEnvSchema = z
       });
     }
 
-    if (env.NODE_ENV === 'production' && env.LOG_PRETTY) {
-      context.addIssue({
-        code: 'custom',
-        path: ['LOG_PRETTY'],
-        message: 'Pretty logging is not allowed in production',
-      });
-    }
-
-    if (env.NODE_ENV !== 'test' && env.LOG_LEVEL === 'silent') {
-      context.addIssue({
-        code: 'custom',
-        path: ['LOG_LEVEL'],
-        message: 'Silent logging is allowed only during tests',
-      });
-    }
+    applyLoggerRules(env, context);
 
     if (env.DB_READINESS_TIMEOUT_MS > env.DB_STATEMENT_TIMEOUT_MS) {
       context.addIssue({

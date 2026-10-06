@@ -1,6 +1,7 @@
 export { systemClock, type Clock } from './time/clock.js';
 export { createLifecycleState, type LifecycleState } from './lifecycle/lifecycle-state.js';
 export type { LifecycleLogger } from './lifecycle/logger.js';
+export { isEntryPoint } from './lifecycle/entry-point.js';
 export {
   installProcessHandlers,
   type FatalEventType,

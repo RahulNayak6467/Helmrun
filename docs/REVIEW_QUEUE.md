@@ -4,6 +4,8 @@
 15. [small] packages/redis/src/redis.ts — closing a client that's reconnecting after a lost connection doesn't log `redis_closed` (no `end` from ioredis; same cause as the known never-connected case). Note only.
 
 ## Done
+- [x] apps/{api,worker,scheduler}/src/config.ts — the two logging rules were copied three times; now one generic `applyLoggerRules` in `packages/config/src/logging-rules.ts`, called from each app's `superRefine`; decision 009 updated (fixed 2026-10-07, Claude)
+- [x] apps/{worker,scheduler}/src/config.ts — identical `SHUTDOWN_TIMEOUT_MS` piece kept app-owned on purpose (API bounds differ; worker's follows run drain in phase 3); recorded in decision 009 (closed 2026-10-07)
 - [x] packages/config/src/redis.ts — REDIS_URL with a query string or fragment is rejected at startup (ioredis would let `?db=`, `?enableOfflineQueue=`, `?commandTimeout=` override the code's options); tests added (fixed 2026-10-07, Claude)
 - [x] packages/redis/src/redis.ts — a second `close()` returned at once while the first was still waiting on `quit()`; now every caller gets the same pending close (test added) (fixed 2026-10-07, Claude)
 - [x] apps/api/src/config.ts — `SHUTDOWN_TIMEOUT_MS` minimum raised 1 s → 5 s, so Redis's 2 s quit bound always fits inside the shutdown deadline (fixed 2026-10-07, Claude)

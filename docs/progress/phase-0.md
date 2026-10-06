@@ -3,12 +3,10 @@
 Spec: `docs/phases/phase-0-foundation.md`
 
 ## Status
-Spec steps 1–12, 14–15 and 19 done: monorepo, config, local stacks, env
-validation, database pool, migrations, Redis client, app/server split, request
-IDs, logging, health/readiness, graceful shutdown, CI workflow, README.
-Each reviewed fresh, all findings fixed. 427 tests pass (`pnpm validate`).
-Left, in order: scheduler and worker shells, OpenAPI, CI extras, then step 13
-(errors) last.
+Spec steps 1–12, 14–15, 19 and 21 done, plus CI extras and the scheduler/worker
+shells (reviewed fresh, no important issues; tests still to write). Left:
+shell/helper tests, OpenAPI (step 17), then step 13 (errors) last, then the
+exit sequence.
 
 ## Done
 - Docs imported; AEC renamed to Helmrun across all docs (2026-10-03)
@@ -66,11 +64,40 @@ Left, in order: scheduler and worker shells, OpenAPI, CI extras, then step 13
   `.env.example` updated. Unit + real-Valkey integration tests (dropped
   connection, wrong password, unreachable port). Two fresh reviews, all
   findings fixed (decision 013, 2026-10-07)
+- Scheduler + worker shells (Claude wrote them at the user's request):
+  `config.ts` (environment + logger + `SHUTDOWN_TIMEOUT_MS`, 10 s default) and
+  `main.ts` each (`startWorker` / `startScheduler`); an `idle_loop` interval
+  keeps the process alive (else Node exits 0 at once → crash loop) and is the
+  only shutdown step; phase 3's poll loop replaces it. Extracted from the API
+  into packages: `loadConfigOrExit` (`packages/config/src/load.ts`),
+  `isEntryPoint` (`packages/shared/src/lifecycle/entry-point.ts`),
+  `applyLoggerRules` (`packages/config/src/logging-rules.ts`; decision 009
+  updated). Smoke-tested built shells (alive, SIGTERM → exit 0 at once, bad
+  config → exit 1). Fresh review: no important issues, 2 small closed
+  (2026-10-07)
 
 ## Next step
-Scheduler and worker shells (item 4 below): `config.ts` + `main.ts` each,
-start, log, shut down with the shared lifecycle helpers; no dependencies
-opened yet. Mostly mechanical (Claude can do it), then `/review fresh`.
+The user's plan for the rest of phase 0 (2026-10-07): three steps, easy →
+medium → hard, then the exit sequence.
+- **Easy: done**, committed, CI green (item 6 below: gitleaks, pre-commit
+  hook, test DB guard).
+- **Medium: in progress.** Shells done. Next: the user writes test cases in
+  plain English for `loadConfigOrExit` (valid → returned; Zod error → one
+  JSON line, no rejected values, exit 1; non-Zod error rethrown, nothing
+  written), `isEntryPoint` (undefined, missing path, symlink to module,
+  other file), shell configs (defaults, logging rules, timeout bounds), and
+  one shutdown test per shell (fake process target, SIGTERM → exit 0,
+  interval cleared); `tester` implements. Then the OpenAPI baseline (item 5):
+  ask the user first, handwritten YAML (leaning) or generated from Zod; then
+  `/review fresh`.
+- **Hard:** step 13, errors (item 7), the user writes it; then its follow-ups.
+- **Exit sequence:** `/review fresh` over the phase → failure experiments
+  (user) → study pack → `/drill`.
+
+User preferences (also in memory): no Claude watermark in proposed commit
+messages; keep comments minimal (short "why" only); for code Claude writes,
+Claude fixes its own review findings; for the user's code, the user fixes
+important findings and Claude may do small ones when asked.
 
 Local setup: `.env` must set `SHUTDOWN_TIMEOUT_MS` above
 `DB_STATEMENT_TIMEOUT_MS` (e.g. 20000), or the API refuses to start.
@@ -96,8 +123,7 @@ Then the pieces that need a decision. Order changed 2026-10-06 (user's call):
 everything that doesn't depend on the error model first, step 13 last.
 3. ~~Redis lifecycle (step 9)~~ done 2026-10-07 (decision 013; design and
    review details there and in `docs/REVIEW_QUEUE.md`).
-4. Scheduler + worker shells: `main.ts` + `config.ts`, start, log, shut down
-   with the shared lifecycle helpers. No LLM-Gateway equivalent.
+4. ~~Scheduler + worker shells~~ written 2026-10-07 (see Done); tests pending.
 5. OpenAPI baseline (step 17): tool choice and how schemas stay aligned with
    Zod; document the health endpoints. The error-response schema waits for
    step 13. User is leaning towards a handwritten YAML spec (not decided);

@@ -47,6 +47,7 @@ and `/wrap` must surface the items listed for it.
 | 1 | Decide branching: one branch per workstream merged into `main`; add the rule to `CLAUDE.md` (`/review` defaults to `git diff main...HEAD`) | Phase 0 discussion |
 | 3 | Add top-level `tests/e2e/` for cross-app tests (API → SQS → worker) | Decision 004 |
 | 3 | Decide where run-state transition logic lives (shared by API, scheduler, worker, recovery) | Decision 005 |
+| 3 | Worker needs `AGENT_PAYLOAD_REDACT_PATHS` (now in `apps/api/src/dependencies.ts`; apps can't import apps): move it to a Helmrun-specific package | Phase 0 shells |
 | 5 | Create `apps/runtime` (sandbox entrypoint, helmrun-runtime image) | Decision 005 |
 | 7 | Create `infrastructure/terraform/` | Decision 004 |
 | 7 | `pino-pretty` is a devDependency and only `production` forbids `LOG_PRETTY`: keep it off in deployed non-production environments | Decision 011 review |

@@ -40,3 +40,12 @@ Status: Accepted
 - Rules attached to pieces: silently lost on spread.
 - Shared rule helpers in `packages/config`: unnecessary until a second app
   needs the same rules (phase 3); revisit then.
+
+## Update (2026-10-07)
+- The worker and scheduler shells need the same logging rules, so
+  `applyLoggerRules(env, context)` now lives in `packages/config`. Each app
+  still combines first and calls it from its own `superRefine` (rules read two
+  pieces, so they can't attach to either).
+- `SHUTDOWN_TIMEOUT_MS` stays app-owned: the API's bounds already differ
+  (minimum 5 s for Redis), and the worker's will follow its run drain time in
+  phase 3.

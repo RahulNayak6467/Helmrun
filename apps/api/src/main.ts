@@ -1,51 +1,24 @@
-import { realpathSync } from 'node:fs';
 import http from 'node:http';
 
-import { toConfigValidationIssues } from '@helmrun/config';
+import { loadConfigOrExit } from '@helmrun/config';
 import type { Logger } from '@helmrun/logger';
 import {
   createLifecycleState,
   createShutdownCoordinator,
   installProcessHandlers,
+  isEntryPoint,
   type RequestShutdown,
   type ShutdownProcessTarget,
 } from '@helmrun/shared';
 
 import { createApp } from './app.js';
-import { loadConfig, type ApiConfig } from './config.js';
+import { loadConfig } from './config.js';
 import { createDependencies, SERVICE_NAME } from './dependencies.js';
 import { createReadinessChecker } from './health/readiness.js';
 import { createHttpServerCloser } from './http/server-closer.js';
 
 // Time for the fatal log line to flush before a startup failure force-exits.
 const STARTUP_FAILURE_EXIT_DELAY_MS = 1_000;
-
-// Invalid config means nothing else can safely run. No logger exists yet, so
-// write one structured line to stderr (field names and reasons only, never the
-// rejected values) and exit non-zero.
-const loadConfigOrExit = (): ApiConfig => {
-  try {
-    return loadConfig();
-  } catch (error) {
-    const issues = toConfigValidationIssues(error);
-
-    if (issues === null) {
-      throw error;
-    }
-
-    process.stderr.write(
-      `${JSON.stringify({
-        severity: 'FATAL',
-        service: SERVICE_NAME,
-        event: 'config_invalid',
-        issues,
-        msg: 'Invalid configuration; refusing to start',
-      })}\n`,
-    );
-
-    return process.exit(1);
-  }
-};
 
 export interface RunningApi {
   readonly server: http.Server;
@@ -58,7 +31,7 @@ export interface RunningApi {
 // server without adding listeners to the test runner's process. Tests also
 // pass their own processTarget, so a shutdown deadline can't exit the runner.
 export const startServer = (processTarget: ShutdownProcessTarget = process): RunningApi => {
-  const config = loadConfigOrExit();
+  const config = loadConfigOrExit(SERVICE_NAME, loadConfig);
   const dependencies = createDependencies(config);
   const { logger } = dependencies;
   const lifecycle = createLifecycleState();
@@ -126,24 +99,7 @@ export const startServer = (processTarget: ShutdownProcessTarget = process): Run
   return { server, logger, requestShutdown };
 };
 
-// Start only when this file is run directly (`pnpm dev` / `pnpm start`), never
-// when a test imports it. `import.meta.main` is undefined under tsx, which
-// `pnpm dev` uses, so compare the entry path instead.
-const isEntryPoint = (): boolean => {
-  const entryPath = process.argv[1];
-
-  if (entryPath === undefined) return false;
-
-  try {
-    return realpathSync(entryPath) === import.meta.filename;
-  } catch {
-    // argv[1] isn't a real file (a wrapper, or a path without its extension):
-    // then this module isn't the entry point.
-    return false;
-  }
-};
-
-if (isEntryPoint()) {
+if (isEntryPoint(import.meta.filename)) {
   const { logger, requestShutdown } = startServer();
 
   // While shutdown runs, repeated signals join it (the deadline bounds it).
