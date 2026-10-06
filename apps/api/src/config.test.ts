@@ -6,9 +6,14 @@ import { apiEnvSchema, loadConfig, parseConfig } from './config.js';
 type EnvironmentInput = Record<string, unknown>;
 
 const validDatabaseUrl = 'postgresql://helmrun_test:password@127.0.0.1:5441/helmrun_test';
+const validRedisUrl = 'redis://:password@127.0.0.1:6391';
 
-// The two variables without defaults. Everything else falls back to defaults.
-const requiredInput = { NODE_ENV: 'development', DATABASE_URL: validDatabaseUrl } as const;
+// The variables without defaults. Everything else falls back to defaults.
+const requiredInput = {
+  NODE_ENV: 'development',
+  DATABASE_URL: validDatabaseUrl,
+  REDIS_URL: validRedisUrl,
+} as const;
 
 const expectedDefaults = {
   environment: 'development',
@@ -28,10 +33,18 @@ const expectedDefaults = {
     statementTimeoutMs: 15_000,
     readinessTimeoutMs: 1_000,
   },
+  redis: {
+    url: validRedisUrl,
+    commandTimeoutMs: 100,
+    connectTimeoutMs: 2_000,
+  },
 } as const;
 
 const explicitEnvironment = {
   DATABASE_URL: validDatabaseUrl,
+  REDIS_URL: validRedisUrl,
+  REDIS_COMMAND_TIMEOUT_MS: '250',
+  REDIS_CONNECT_TIMEOUT_MS: '4000',
   NODE_ENV: 'test',
   PORT: '8080',
   HTTP_REQUEST_TIMEOUT_MS: '90000',
@@ -64,6 +77,11 @@ const expectedExplicitConfig = {
     idleTimeoutMs: 30_000,
     statementTimeoutMs: 45_000,
     readinessTimeoutMs: 750,
+  },
+  redis: {
+    url: validRedisUrl,
+    commandTimeoutMs: 250,
+    connectTimeoutMs: 4_000,
   },
 } as const;
 
@@ -167,13 +185,13 @@ describe('API configuration', () => {
       { field: 'HTTP_REQUEST_TIMEOUT_MS', minimum: 1_000, maximum: 300_000 },
       { field: 'HTTP_HEADERS_TIMEOUT_MS', minimum: 1_000, maximum: 120_000 },
       { field: 'HTTP_KEEP_ALIVE_TIMEOUT_MS', minimum: 1_000, maximum: 120_000 },
-      { field: 'SHUTDOWN_TIMEOUT_MS', minimum: 1_000, maximum: 120_000 },
+      { field: 'SHUTDOWN_TIMEOUT_MS', minimum: 5_000, maximum: 120_000 },
     ] as const;
 
     // Each timeout set to its own minimum: valid on its own and keeps the
     // header ≤ request rule satisfied, so only the field under test can fail.
     // Database timeouts at their minimums too, so the shutdown > statement and
-    // readiness ≤ statement rules hold even with SHUTDOWN_TIMEOUT_MS at 1 s.
+    // readiness ≤ statement rules hold even with SHUTDOWN_TIMEOUT_MS at 5 s.
     const minimumTimeouts = {
       ...Object.fromEntries(timeoutContracts.map(({ field, minimum }) => [field, String(minimum)])),
       DB_STATEMENT_TIMEOUT_MS: '100',

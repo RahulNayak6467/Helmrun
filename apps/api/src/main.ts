@@ -88,6 +88,7 @@ export const startServer = (processTarget: ShutdownProcessTarget = process): Run
     logger.fatal({ event: 'http_server_start_failed', err: error }, 'HTTP server failed to start');
     process.exitCode = 1;
     void dependencies.databasePool.end();
+    void dependencies.redis.close();
     setTimeout(() => process.exit(1), STARTUP_FAILURE_EXIT_DELAY_MS).unref();
   };
 
@@ -114,6 +115,7 @@ export const startServer = (processTarget: ShutdownProcessTarget = process): Run
     steps: [
       { name: 'http_server', close: closeHttpServer },
       { name: 'database_pool', close: () => dependencies.databasePool.end() },
+      { name: 'redis', close: () => dependencies.redis.close() },
     ],
     lifecycle,
     logger,

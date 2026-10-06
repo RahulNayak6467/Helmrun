@@ -23,3 +23,4 @@ API/scheduler/worker processes) are listed in
 | 010 | [Database package: typed pool, own logger interface, two query deadlines](010-database-package.md) | 0 | Accepted |
 | 011 | [Logging, request IDs, and the API entry point](011-logging-request-ids-entrypoint.md) | 0 | Accepted |
 | 012 | [Health, readiness, and graceful shutdown](012-health-readiness-graceful-shutdown.md) | 0 | Accepted |
+| 013 | [Redis client package: degrade, never fail](013-redis-client-package.md) | 0 | Accepted |

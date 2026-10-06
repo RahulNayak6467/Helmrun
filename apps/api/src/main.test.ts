@@ -15,13 +15,22 @@ const findFreePort = async (): Promise<number> => {
   return port;
 };
 
-const stubValidEnv = (port: number): void => {
+// Redis connects eagerly, so point it at a closed port, not the test Valkey.
+const stubValidEnv = async (port: number): Promise<void> => {
   vi.stubEnv('NODE_ENV', 'test');
   vi.stubEnv('LOG_LEVEL', 'silent');
   vi.stubEnv('LOG_PRETTY', 'false');
   vi.stubEnv('PORT', String(port));
   vi.stubEnv('DATABASE_URL', 'postgresql://helmrun_test:password@127.0.0.1:5441/helmrun_test');
+  vi.stubEnv('REDIS_URL', `redis://:password@127.0.0.1:${String(await findFreePort())}`);
 };
+
+const createFakeProcess = () => ({
+  exitCode: undefined as number | string | null | undefined,
+  exit: vi.fn<(code: number) => never>(),
+});
+
+const SIGTERM = { reason: 'signal', signal: 'SIGTERM', exitCode: 0 } as const;
 
 describe('API entry point', () => {
   afterEach(() => {
@@ -39,10 +48,10 @@ describe('API entry point', () => {
 
   it('listens on the configured port and responds over HTTP', async () => {
     const port = await findFreePort();
-    stubValidEnv(port);
+    await stubValidEnv(port);
     const { startServer } = await import('./main.js');
 
-    const { server } = startServer();
+    const { server, requestShutdown } = startServer(createFakeProcess());
 
     try {
       await once(server, 'listening');
@@ -50,8 +59,7 @@ describe('API entry point', () => {
 
       expect(response.headers.get('x-request-id')).toEqual(expect.any(String));
     } finally {
-      server.close();
-      await once(server, 'close');
+      await requestShutdown(SIGTERM);
     }
   });
 
@@ -61,7 +69,7 @@ describe('API entry point', () => {
     blocker.listen(0);
     await once(blocker, 'listening');
     const { port } = blocker.address() as AddressInfo;
-    stubValidEnv(port);
+    await stubValidEnv(port);
     const exit = vi.spyOn(process, 'exit').mockImplementation((() => undefined) as never);
     const { startServer } = await import('./main.js');
 
@@ -79,10 +87,10 @@ describe('API entry point', () => {
 
   it('logs runtime server errors after listening without exiting or crashing', async () => {
     const port = await findFreePort();
-    stubValidEnv(port);
+    await stubValidEnv(port);
     const exit = vi.spyOn(process, 'exit').mockImplementation((() => undefined) as never);
     const { startServer } = await import('./main.js');
-    const { server } = startServer();
+    const { server, requestShutdown } = startServer(createFakeProcess());
 
     try {
       await once(server, 'listening');
@@ -93,14 +101,13 @@ describe('API entry point', () => {
       expect(exit).not.toHaveBeenCalled();
       expect(process.exitCode).toBeUndefined();
     } finally {
-      server.close();
-      await once(server, 'close');
+      await requestShutdown(SIGTERM);
     }
   });
 
   it('starts the server when the file is run directly, as pnpm dev does', async () => {
     const port = await findFreePort();
-    stubValidEnv(port);
+    await stubValidEnv(port);
     vi.stubEnv('LOG_LEVEL', 'info');
     const apiRoot = resolve(import.meta.dirname, '..');
     // The child inherits the stubbed environment.
@@ -130,9 +137,9 @@ describe('API entry point', () => {
     }
   }, 15_000);
 
-  it('handles SIGTERM when run directly: closes HTTP, then the pool, and exits 0', async () => {
+  it('handles SIGTERM when run directly: closes HTTP, then the pool, then Redis, and exits 0', async () => {
     const port = await findFreePort();
-    stubValidEnv(port);
+    await stubValidEnv(port);
     vi.stubEnv('LOG_LEVEL', 'info');
     const apiRoot = resolve(import.meta.dirname, '..');
     const child = spawn(
@@ -157,19 +164,55 @@ describe('API entry point', () => {
       expect(code).toBe(0);
       expect(output).toContain('shutdown_started');
       expect(output).toContain('shutdown_completed');
-      expect(output.indexOf('"step":"http_server"')).toBeLessThan(
-        output.indexOf('"step":"database_pool"'),
-      );
+      const httpStep = output.indexOf('"step":"http_server"');
+      const poolStep = output.indexOf('"step":"database_pool"');
+      const redisStep = output.indexOf('"step":"redis"');
+      expect(httpStep).toBeGreaterThanOrEqual(0);
+      expect(httpStep).toBeLessThan(poolStep);
+      expect(poolStep).toBeLessThan(redisStep);
+    } finally {
+      child.kill('SIGKILL');
+    }
+  }, 15_000);
+
+  it('logs a Redis startup failure with its real error type, without a stack', async () => {
+    const port = await findFreePort();
+    await stubValidEnv(port);
+    vi.stubEnv('LOG_LEVEL', 'info');
+    const apiRoot = resolve(import.meta.dirname, '..');
+    const child = spawn(
+      process.execPath,
+      ['--conditions=@helmrun/source', '--import', 'tsx', resolve(apiRoot, 'src/main.ts')],
+      { cwd: apiRoot, stdio: ['ignore', 'pipe', 'pipe'] },
+    );
+    let output = '';
+    child.stdout.on('data', (chunk: Buffer) => {
+      output += chunk.toString('utf8');
+    });
+
+    try {
+      await vi.waitFor(() => {
+        expect(output).toContain('redis_unavailable_at_startup');
+      }, 10_000);
+
+      const line = output
+        .split('\n')
+        .find((candidate) => candidate.includes('"event":"redis_unavailable_at_startup"'));
+      const record = JSON.parse(line ?? '{}') as Record<string, unknown>;
+
+      expect(record.err).toBeUndefined();
+      expect(record.errorDetails).toMatchObject({ type: 'Error', code: 'ECONNREFUSED' });
+      expect(record.errorDetails).not.toHaveProperty('stack');
     } finally {
       child.kill('SIGKILL');
     }
   }, 15_000);
 
   it.each(['uncaught_exception', 'unhandled_rejection'] as const)(
-    'on a fatal %s when run directly: logs it, runs both shutdown steps, and exits 1',
+    'on a fatal %s when run directly: logs it, runs every shutdown step, and exits 1',
     async (fault) => {
       const port = await findFreePort();
-      stubValidEnv(port);
+      await stubValidEnv(port);
       vi.stubEnv('LOG_LEVEL', 'info');
       vi.stubEnv('HELMRUN_TEST_FAULT', fault);
       const apiRoot = resolve(import.meta.dirname, '..');
@@ -204,6 +247,7 @@ describe('API entry point', () => {
         expect(output).toContain(`"fatalEventType":"${fault}"`);
         expect(output).toContain('"step":"http_server"');
         expect(output).toContain('"step":"database_pool"');
+        expect(output).toContain('"step":"redis"');
         expect(output).toContain('shutdown_completed');
         expect(output).not.toContain('shutdown_deadline_exceeded');
       } finally {
@@ -215,30 +259,29 @@ describe('API entry point', () => {
 
   it('does not install process-wide handlers when started from a test', async () => {
     const port = await findFreePort();
-    stubValidEnv(port);
+    await stubValidEnv(port);
     const before = process.listenerCount('SIGTERM');
     const { startServer } = await import('./main.js');
-    const { server } = startServer();
+    const { server, requestShutdown } = startServer(createFakeProcess());
 
     try {
       await once(server, 'listening');
 
       expect(process.listenerCount('SIGTERM')).toBe(before);
     } finally {
-      server.close();
-      await once(server, 'close');
+      await requestShutdown(SIGTERM);
     }
   });
 
   it('stops listening and sets exit code 0 when shutdown is requested', async () => {
     const port = await findFreePort();
-    stubValidEnv(port);
-    const processTarget = { exitCode: undefined, exit: vi.fn<(code: number) => never>() };
+    await stubValidEnv(port);
+    const processTarget = createFakeProcess();
     const { startServer } = await import('./main.js');
     const { server, requestShutdown } = startServer(processTarget);
     await once(server, 'listening');
 
-    await requestShutdown({ reason: 'signal', signal: 'SIGTERM', exitCode: 0 });
+    await requestShutdown(SIGTERM);
 
     expect(server.listening).toBe(false);
     expect(processTarget.exitCode).toBe(0);

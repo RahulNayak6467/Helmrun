@@ -24,6 +24,7 @@
     "db:migrate": "pnpm --filter @helmrun/database migrate:up",
     "db:migrate:create": "pnpm --filter @helmrun/database migrate:create",
     "db:migrate:test": "pnpm --filter @helmrun/database migrate:test:up",
+    "test:stack": "docker compose -f docker-compose.test.yml --env-file .env.test up -d --wait && pnpm db:migrate:test",
     "validate": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build"
   },
   "devDependencies": {

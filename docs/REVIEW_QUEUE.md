@@ -1,8 +1,23 @@
 # Review queue
 
 ## Open
+15. [small] packages/redis/src/redis.ts — closing a client that's reconnecting after a lost connection doesn't log `redis_closed` (no `end` from ioredis; same cause as the known never-connected case). Note only.
 
 ## Done
+- [x] packages/config/src/redis.ts — REDIS_URL with a query string or fragment is rejected at startup (ioredis would let `?db=`, `?enableOfflineQueue=`, `?commandTimeout=` override the code's options); tests added (fixed 2026-10-07, Claude)
+- [x] packages/redis/src/redis.ts — a second `close()` returned at once while the first was still waiting on `quit()`; now every caller gets the same pending close (test added) (fixed 2026-10-07, Claude)
+- [x] apps/api/src/config.ts — `SHUTDOWN_TIMEOUT_MS` minimum raised 1 s → 5 s, so Redis's 2 s quit bound always fits inside the shutdown deadline (fixed 2026-10-07, Claude)
+- [x] packages/redis/src/redis.ts — quit timeout logged as `redis_quit_timed_out` ("Redis quit timed out; forcing disconnect") instead of the misleading `redis_connection_timedout` (fixed 2026-10-07, Claude)
+- [x] packages/redis/src/redis.ts close() — guard first; a not-ready client skips quit() and is disconnected directly (no warning per shutdown during an outage); quit timeout and quit failure each log one warn (`redis_connection_timedout`, `redis_quit_failed` with safe fields); single guarded `forcedDisconnect()` logs Error and non-Error throws; `timeoutFailure` removed (fixed 2026-10-07, user + Claude)
+- [x] packages/redis/src/redis.ts — dead `closing → closing` branch removed; identical `ready` branches merged; explicit return type (still exposes the raw client for phase 1 commands, by choice) (fixed 2026-10-07, user)
+- [x] packages/redis/src/redis.ts — reconnect delay: exponential backoff (50 ms doubling, capped at 2 s) with equal jitter, never gives up; constants renamed by the user (`MAX_RECONNECT_DELAY_MS`, `QUIT_TIMEOUT_MS`); tests pin growth and jitter range (fixed 2026-10-07, Claude + user)
+- [x] packages/redis/src/redis.ts close() — `quit()` race uses a unique `Symbol` sentinel with a typed timeout promise instead of the `'Timeout'` string (fixed 2026-10-07, Claude)
+- [x] packages/config/src/redis.ts — `REDIS_URL` may only use database 0 (no path, `/` or `/0`); `/abc`, `/2`, `/99` rejected at startup; wrong protocol now stops further checks so it reports one issue; tests added (fixed 2026-10-07, Claude)
+- [x] packages/config/src/redis.ts — schema tests added (`redis.test.ts`, 41 cases: URL required/invalid/scheme/host, no secret in messages, timeout defaults, bounds, digits only); `abort: true` reason comment added (fixed 2026-10-07, Claude). DB-path cases wait for item 13.
+- [x] packages/redis/src/redis.ts — Redis failure logs used the `err` key, so the app logger's Pino error serializer rewrote the sanitized fields (`type: "Object"`, empty `stack`); now logged under `errorDetails`. Pinned by a child-process test through the real logger (fails with the old key) (fixed 2026-10-07, Claude)
+- [x] apps/api/src/main.test.ts — in-process `startServer()` tests leaked an eagerly connecting Redis client; they now run the real shutdown with a fake process target, and Redis points at a closed port (fixed 2026-10-07, Claude)
+- [x] apps/api/src/main.test.ts — SIGTERM test asserts `http_server → database_pool → redis`; fatal-error test asserts the `redis` step runs (fixed 2026-10-07, Claude)
+- [x] packages/redis/src/redis.ts — `createRedisClient` takes an injected `Pick<Clock, 'monotonicMs'>` (default `systemClock`); the API passes its clock; unit tests use a fake clock instead of spying on the singleton (fixed 2026-10-07, Claude)
 - [x] .github/workflows/ci.yml — every PR commit ran CI twice (`push` unfiltered + `pull_request`, different concurrency groups); `push` now limited to `main` (fixed 2026-10-04)
 - [x] .github/workflows/ci.yml — `cancel-in-progress` also cancelled earlier runs on `main`, leaving commits unverified; now cancels only off `main` (fixed 2026-10-04)
 - [x] .github/workflows/ci.yml — logs step ran on any failure, erroring itself when the stack never started; now gated on the `test-stack` step having run (fixed 2026-10-04)

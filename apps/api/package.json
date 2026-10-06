@@ -16,9 +16,9 @@
     "@helmrun/config": "workspace:*",
     "@helmrun/database": "workspace:*",
     "@helmrun/logger": "workspace:*",
+    "@helmrun/redis": "workspace:*",
     "@helmrun/shared": "workspace:*",
     "express": "5.2.1",
-    "ioredis": "5.11.1",
     "zod": "catalog:"
   },
   "devDependencies": {

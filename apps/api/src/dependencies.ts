@@ -1,5 +1,6 @@
 import { createPool, type Pool } from '@helmrun/database';
 import { createLogger, type Logger } from '@helmrun/logger';
+import { createRedisClient, type RedisConnection } from '@helmrun/redis';
 import { systemClock, type Clock } from '@helmrun/shared';
 
 import type { ApiConfig } from './config.js';
@@ -30,6 +31,7 @@ export interface ApiDependencies {
   readonly logger: Logger;
   readonly clock: Clock;
   readonly databasePool: Pool;
+  readonly redis: RedisConnection;
 }
 
 // Composition root: every long-lived client is built here, once, and injected
@@ -46,5 +48,7 @@ export const createDependencies = (config: ApiConfig): ApiDependencies => {
   // pg connects lazily: no connection is opened until the first query.
   const databasePool = createPool({ ...config.database, applicationName: SERVICE_NAME }, logger);
 
-  return { config, logger, clock: systemClock, databasePool };
+  const redis = createRedisClient(config.redis, logger, systemClock);
+
+  return { config, logger, clock: systemClock, databasePool, redis };
 };

@@ -5,6 +5,7 @@ import * as z from 'zod';
 export { environmentEnvSchema, type NodeEnvironment } from './environment.js';
 export { loggerEnvSchema } from './logging.js';
 export { databaseEnvSchema, databaseUrlSchema } from './database.js';
+export { redisEnvSchema } from './redis.js';
 export { integerEnv } from './integer.js';
 
 // Raw key/value input, normally process.env. Taking it as a parameter keeps

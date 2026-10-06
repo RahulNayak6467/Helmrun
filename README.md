@@ -46,24 +46,27 @@ curl http://127.0.0.1:8010/health/live    # process is running
 curl http://127.0.0.1:8010/health/ready   # ready for traffic (PostgreSQL reachable)
 ```
 
+Valkey is optional at runtime: PostgreSQL is the source of truth and Redis only
+speeds things up. The API starts and stays ready without it, logs when it's
+unavailable or recovers, and requests fall back to PostgreSQL.
+
 Stop with `Ctrl+C`, then `docker compose down`. Development data persists in
 named volumes; `docker compose down --volumes` deletes it.
 
 ## Tests
 
 Integration tests run against a separate test stack (its own ports and
-database, empty on every start):
+databases, empty on every start):
 
 ```sh
 cp .env.test.example .env.test
-docker compose -f docker-compose.test.yml --env-file .env.test up -d --wait
-pnpm db:migrate:test
+pnpm test:stack   # start test PostgreSQL + Valkey, then run test migrations
 ```
 
 | Command | Runs |
 | --- | --- |
 | `pnpm test:unit` | Unit and HTTP tests (no services needed) |
-| `pnpm test:integration` | Tests against the test PostgreSQL |
+| `pnpm test:integration` | Tests against the test PostgreSQL and Valkey |
 | `pnpm test` | Both |
 | `pnpm validate` | Format check, lint, typecheck, all tests, build (what CI runs) |
 
@@ -90,7 +93,7 @@ anything is missing or invalid, naming the variable but never its value.
 | Runtime | `NODE_ENV`, `LOG_LEVEL`, `LOG_PRETTY` |
 | API server | `PORT`, `HTTP_REQUEST_TIMEOUT_MS`, `HTTP_HEADERS_TIMEOUT_MS`, `HTTP_KEEP_ALIVE_TIMEOUT_MS`, `SHUTDOWN_TIMEOUT_MS` |
 | PostgreSQL | `DATABASE_URL`, `DB_POOL_MAX`, `DB_CONNECTION_TIMEOUT_MS`, `DB_POOL_IDLE_TIMEOUT_MS`, `DB_STATEMENT_TIMEOUT_MS`, `DB_READINESS_TIMEOUT_MS` |
-| Valkey | `REDIS_URL` (read once the Redis client is added) |
+| Valkey | `REDIS_URL`, `REDIS_COMMAND_TIMEOUT_MS`, `REDIS_CONNECT_TIMEOUT_MS` |
 
 Some values are checked together. For example, `SHUTDOWN_TIMEOUT_MS` must
 exceed `DB_STATEMENT_TIMEOUT_MS`, so a request in the middle of a query can
@@ -107,6 +110,7 @@ packages/
   config/       environment parsing helpers
   database/     PostgreSQL pool, health query, migrations
   logger/       structured logging with redaction
+  redis/        Redis/Valkey client: fail-fast settings, connection logging, bounded close
   shared/       dependency-free building blocks (clock, lifecycle, shutdown)
 docs/           overview, phase specs, decisions, progress
 ```

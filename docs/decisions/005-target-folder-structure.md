@@ -118,8 +118,8 @@ Deviations from the phase specs:
   `AppError` lives in `shared` and the worker/runtime will throw errors too.
   Decide who maps errors to HTTP status. Settle when building the error model
   in phase 0.
-- Redis client: inside `apps/api` (only consumer in phase 0) vs a package now.
-  Settle when building the Redis workstream in phase 0.
+- ~~Redis client: inside `apps/api` vs a package now.~~ Settled: `packages/redis`
+  (decision 013, 2026-10-07); there is no `apps/api/src/redis.ts`.
 - Where run-state transition logic lives once API, scheduler, worker, and
   recovery all change run state. Not `packages/runs` yet (phase 0 spec). Decide
   in phase 3; tracked in Deferred items.

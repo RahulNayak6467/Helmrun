@@ -3,12 +3,12 @@
 Spec: `docs/phases/phase-0-foundation.md`
 
 ## Status
-Spec steps 1–8, 10–12, 14–15 and 19 done: monorepo, config, local stacks, env
-validation, database pool, migrations, app/server split, request IDs, logging,
-health/readiness, graceful shutdown, CI workflow (green on GitHub).
-Each reviewed fresh, all findings fixed. 307 unit + 13 integration tests pass.
-README written. Left: step 13 (errors), Redis (step 9, user), scheduler and
-worker shells, OpenAPI, CI extras.
+Spec steps 1–12, 14–15 and 19 done: monorepo, config, local stacks, env
+validation, database pool, migrations, Redis client, app/server split, request
+IDs, logging, health/readiness, graceful shutdown, CI workflow, README.
+Each reviewed fresh, all findings fixed. 427 tests pass (`pnpm validate`).
+Left, in order: scheduler and worker shells, OpenAPI, CI extras, then step 13
+(errors) last.
 
 ## Done
 - Docs imported; AEC renamed to Helmrun across all docs (2026-10-03)
@@ -55,10 +55,22 @@ worker shells, OpenAPI, CI extras.
   readiness integration tests on real Postgres; child-process tests for
   SIGTERM and fatal errors (`test/support/fault-injection.ts`). Two fresh
   reviews, all findings fixed (decision 012, 2026-10-04)
+- Step 9, Redis (user wrote `packages/redis` + the env schema; Claude wired
+  the API, wrote fixes for its own review findings, tester wrote the tests):
+  `packages/redis` client with fail-fast options, never-give-up backoff with
+  jitter, transition-only logging state machine, safe error fields under
+  `errorDetails`, idempotent bounded close; `REDIS_*` env piece in
+  `packages/config` (database 0 only, no query string); API config,
+  composition root, `redis` shutdown step after `database_pool`;
+  `SHUTDOWN_TIMEOUT_MS` minimum 5 s; `pnpm test:stack`; README and
+  `.env.example` updated. Unit + real-Valkey integration tests (dropped
+  connection, wrong password, unreachable port). Two fresh reviews, all
+  findings fixed (decision 013, 2026-10-07)
 
 ## Next step
-Step 13, errors (item 3 below): the user writes the list of error kinds, each
-with its HTTP status and whether it's transient (question 1b).
+Scheduler and worker shells (item 4 below): `config.ts` + `main.ts` each,
+start, log, shut down with the shared lifecycle helpers; no dependencies
+opened yet. Mostly mechanical (Claude can do it), then `/review fresh`.
 
 Local setup: `.env` must set `SHUTDOWN_TIMEOUT_MS` above
 `DB_STATEMENT_TIMEOUT_MS` (e.g. 20000), or the API refuses to start.
@@ -80,25 +92,31 @@ Port first (small changes):
    configuration, repo layout, doc links. Update it as phase 0 pieces land
    (Redis, error envelope, OpenAPI).
 
-Then the pieces that need a decision:
-3. Step 13, errors. Agreed so far: `shared` stays transport-neutral (no
-   `statusCode` on `AppError`); the API's error middleware maps errors to
+Then the pieces that need a decision. Order changed 2026-10-06 (user's call):
+everything that doesn't depend on the error model first, step 13 last.
+3. ~~Redis lifecycle (step 9)~~ done 2026-10-07 (decision 013; design and
+   review details there and in `docs/REVIEW_QUEUE.md`).
+4. Scheduler + worker shells: `main.ts` + `config.ts`, start, log, shut down
+   with the shared lifecycle helpers. No LLM-Gateway equivalent.
+5. OpenAPI baseline (step 17): tool choice and how schemas stay aligned with
+   Zod; document the health endpoints. The error-response schema waits for
+   step 13. User is leaning towards a handwritten YAML spec (not decided);
+   if so, add a contract test (responses validated against the YAML) and a
+   route-coverage test so the spec can't drift.
+6. CI extras: `gitleaks` secret scanning; pre-commit hook or not; guard
+   against a shell `DATABASE_URL` reaching tests. (`pnpm test:stack` done
+   2026-10-07.)
+7. Step 13, errors (last). Agreed so far: `shared` stays transport-neutral
+   (no `statusCode` on `AppError`); the API's error middleware maps errors to
    HTTP status. Pending (question 1b): every `AppError` declares a kind from a
    small closed list, and the API maps kind → status exhaustively; the user
    writes that list (each kind's HTTP status, transient or not). Then
    envelope, unknown-error logging (pg `detail` leak), where domain codes
    live. Ports once the design is set: `not-found.middleware.ts`, the
-   invalid-JSON / payload-too-large checks.
-4. Redis lifecycle (step 9): user writes it; location decision open. Add to
-   readiness and to shutdown as one more step. When done, update `README.md`
-   (user asked): Valkey row in Configuration (`REDIS_URL` validated, drop
-   "read once the Redis client is added"), readiness description, layout if
-   it becomes a package.
-5. Scheduler + worker shells: `main.ts` + `config.ts`, start, log, shut down
-   with the shared lifecycle helpers. No LLM-Gateway equivalent.
-6. OpenAPI baseline (step 17): tool choice and how schemas stay aligned with
-   Zod. No LLM-Gateway equivalent.
-7. CI extras: `gitleaks` secret scanning; pre-commit hook or not.
+   invalid-JSON / payload-too-large checks. Follow-ups after it: OpenAPI
+   error schema, README error section.
+   Must land before the exit sequence (malformed-request experiment, error
+   boundary review) and before phase 1 (every endpoint throws through it).
 
 Done from the earlier porting plan: env validation (5), pool + migrations
 (7–8, transaction helper deferred to phase 1), app/server split (10), request
@@ -132,11 +150,8 @@ IDs + logging (11–12), health/readiness (14), graceful shutdown (15).
   (decision 005 → Open, settle in step 13). Also: where domain error codes live,
   since a single closed catalog in `shared` would pull Helmrun codes into a
   generic package.
-- Redis client: inside `apps/api` for phase 0, or a package now (decision
-  005 → Open).
 - Pre-commit hook: husky + lint-staged vs simple-git-hooks, or skip (spec
   says optional; CI is the real gate).
-- One script that starts the test stack and runs test migrations together.
 - Integration tests (step 7+): `.env.test` defines `TEST_DATABASE_URL`, not
   `DATABASE_URL`, and `process.loadEnvFile` doesn't override variables already
   set in the shell. When tests build an app config, make sure a `DATABASE_URL`

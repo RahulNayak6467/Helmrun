@@ -4,6 +4,7 @@ import {
   environmentEnvSchema,
   integerEnv,
   loggerEnvSchema,
+  redisEnvSchema,
   type EnvironmentSource,
 } from '@helmrun/config';
 
@@ -31,8 +32,9 @@ const serverEnvSchema = z.object({
     unit: 'milliseconds',
   }),
   // Above the default statement timeout (15 s): see the shutdown rule below.
+  // At least 5 s: Redis alone may take 2 s to quit (packages/redis).
   SHUTDOWN_TIMEOUT_MS: integerEnv('SHUTDOWN_TIMEOUT_MS', {
-    min: 1_000,
+    min: 5_000,
     max: 120_000,
     fallback: 20_000,
     unit: 'milliseconds',
@@ -47,6 +49,7 @@ export const apiEnvSchema = z
     ...loggerEnvSchema.shape,
     ...databaseEnvSchema.shape,
     ...serverEnvSchema.shape,
+    ...redisEnvSchema.shape,
   })
   .superRefine((env, context) => {
     if (env.HTTP_HEADERS_TIMEOUT_MS > env.HTTP_REQUEST_TIMEOUT_MS) {
@@ -117,6 +120,11 @@ export const apiEnvSchema = z
         idleTimeoutMs: env.DB_POOL_IDLE_TIMEOUT_MS,
         statementTimeoutMs: env.DB_STATEMENT_TIMEOUT_MS,
         readinessTimeoutMs: env.DB_READINESS_TIMEOUT_MS,
+      }),
+      redis: Object.freeze({
+        url: env.REDIS_URL,
+        commandTimeoutMs: env.REDIS_COMMAND_TIMEOUT_MS,
+        connectTimeoutMs: env.REDIS_CONNECT_TIMEOUT_MS,
       }),
     }),
   );
