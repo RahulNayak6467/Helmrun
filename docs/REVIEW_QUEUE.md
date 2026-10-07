@@ -5,6 +5,8 @@
 15. [small] packages/redis/src/redis.ts — closing a client that's reconnecting after a lost connection doesn't log `redis_closed` (no `end` from ioredis; same cause as the known never-connected case). Note only.
 
 ## Done
+- [x] packages/shared/src/lifecycle/entry-point.ts — `node dist/main` (no extension) loaded the file but the guard returned false → worker/scheduler/API exited 0 silently. Now also tries argv[1] + the module's extension; decision 011 updated (fixed 2026-10-07, Claude; found by fresh review of the phase 0 tests)
+- [x] phase 0 tests — worker/scheduler main tests inherited the developer's shell env (LOG_PRETTY / SHUTDOWN_TIMEOUT_MS broke them); OpenAPI contract check ignored extra keys and documented headers; child-test diagnostics (sent to tester 2026-10-07)
 - [x] apps/api/src/http/error.middleware.ts — ZodError cause made log lines unbounded (~200 MB for a 1 MB body). ZodError no longer kept as cause; every logged message/stack capped (1,000 / 4,000 chars); log-size test (fixed 2026-10-07, Claude)
 - [x] apps/api/src/http/error.middleware.ts — body-parser client errors other than JSON/size became 500. Recognised as a group (`toBodyParserError`): own codes, 415 cases → `invalid_input`, any exposed 4xx → `INVALID_REQUEST_BODY`; none keep a cause; tests per type (fixed 2026-10-07, Claude; decision 015 updated)
 - [x] error.middleware.ts — structural never-throw: whole handler in try/catch → fixed 500 envelope with the request ID, then one `error_middleware_failed` log line (fixed 2026-10-07, Claude; gap found by tester)

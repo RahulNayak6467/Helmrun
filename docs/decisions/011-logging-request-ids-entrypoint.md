@@ -35,7 +35,10 @@ Status: Accepted
   built once, injected).
 - `main.ts` starts only when run directly, detected by comparing
   `realpath(argv[1])` with `import.meta.filename` (`import.meta.main` is
-  undefined under tsx).
+  undefined under tsx). Since 2026-10-07 this is the shared `isEntryPoint`
+  (`packages/shared`), used by the API, worker and scheduler, and it also
+  tries `argv[1]` plus the module's extension: Node starts `node dist/main`
+  without `.js`, and the old check silently exited 0 there.
 - Invalid config: one structured stderr line with field names and reasons
   (never values), exit 1.
 - Server startup errors (e.g. `EADDRINUSE`): fatal log, close the pool, and a

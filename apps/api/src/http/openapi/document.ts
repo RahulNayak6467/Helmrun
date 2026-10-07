@@ -8,12 +8,8 @@ import {
 import { errorResponseSchema } from '../error.middleware.js';
 import { REQUEST_ID_HEADER } from '../request-id.middleware.js';
 
-// Contract version, not the package version: bump it when the public API
-// changes in a way clients notice.
 export const API_CONTRACT_VERSION = '0.1.0';
 
-// Set on every response by the request ID middleware; every operation spreads
-// this in so a new route can't leave it out.
 const commonResponseHeaders = {
   [REQUEST_ID_HEADER]: {
     description: 'ID of this request; quote it when reporting a problem.',
@@ -29,16 +25,12 @@ const probeHeaders = {
   },
 } satisfies oas31.HeadersObject;
 
-// Any route can fail with an unexpected error. Routes that read a body add
-// 400/413 (phase 1); unknown paths answer 404 ROUTE_NOT_FOUND in this shape.
 const internalErrorResponse = {
   description: 'Unexpected error. The body never contains internal details.',
   headers: commonResponseHeaders,
   content: { 'application/json': { schema: errorResponseSchema } },
 };
 
-// Pure: builds the document from the route schemas. scripts/generate-openapi.ts
-// writes it to openapi.json; tests can call it directly.
 export const buildOpenApiDocument = (): ReturnType<typeof createDocument> =>
   createDocument({
     openapi: '3.1.0',

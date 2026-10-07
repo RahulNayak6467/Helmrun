@@ -16,8 +16,6 @@ const createTestApp = (checkReadiness: ReadinessChecker = alwaysReady) =>
     checkReadiness,
   });
 
-// Same app with a real info-level logger and stdout captured; returns the raw
-// error-middleware log lines (the request logger's own lines are filtered out).
 const createLoggingTestApp = () => {
   const chunks: string[] = [];
   vi.spyOn(process.stdout, 'write').mockImplementation((chunk) => {

@@ -12,8 +12,6 @@ type LogRecord = Record<string, unknown>;
 
 const REQUEST_ID = 'request-123';
 
-// A real Pino logger with stdout captured, so assertions see exactly what would
-// be written. The spy is restored after each test by the vitest config.
 const captureLogs = () => {
   const chunks: string[] = [];
   vi.spyOn(process.stdout, 'write').mockImplementation((chunk) => {
@@ -326,7 +324,6 @@ describe('error middleware', () => {
       expect(response.text).not.toContain('rejected-count');
     });
 
-    // These parse a value built in the route, so they aren't limited by the 1kb body limit.
     const parseValue =
       (schema: z.ZodType, value: unknown): RequestHandler =>
       () => {
@@ -593,7 +590,6 @@ describe('error middleware', () => {
       next(original);
     });
     app.use(createErrorMiddleware(logs.logger));
-    // Express only treats a function with four parameters as an error handler.
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const recordDelegated: ErrorRequestHandler = (error: unknown, _req, res, _next) => {
       delegated.push(error);
