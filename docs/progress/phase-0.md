@@ -106,29 +106,20 @@ then `/drill`, then `/wrap` marks phase 0 done.
   472 unit + 22 integration tests pass (2026-10-07)
 
 ## Next step
-The user's plan for the rest of phase 0 (2026-10-07): three steps, easy →
-medium → hard, then the exit sequence.
-- **Easy: done**, committed, CI green (item 6 below: gitleaks, pre-commit
-  hook, test DB guard).
-- **Medium: code done, tests pending.** Shells and OpenAPI baseline written
-  and fresh-reviewed. Next: the user writes test cases in plain English;
-  `tester` implements:
-  - `loadConfigOrExit` (valid → returned; Zod error → one JSON line, no
-    rejected values, exit 1; non-Zod error rethrown, nothing written),
-    `isEntryPoint` (undefined, missing path, symlink to module, other file),
-    shell configs (defaults, logging rules, timeout bounds), one shutdown
-    test per shell (fake process target, SIGTERM → exit 0, interval cleared).
-  - OpenAPI: `/ready` contract test (each status's body validates against
-    its schema in `buildOpenApiDocument()`), and a route-coverage test
-    (needs a design first: Express has no public route list, so something
-    must be the single list that both mounts and documents routes).
-  - README "API contract" section (user-owned): `openapi.json` is generated
-    and committed; `pnpm openapi:generate` after route changes; CI runs
-    `pnpm openapi:check`.
-- **Hard: done** (step 13, see Done). Only the README error section is left
-  (user-owned): the envelope, the codes, request ID for support.
-- **Exit sequence:** `/review fresh` over the phase → failure experiments
-  (user) → study pack → `/drill`.
+All build work and the exit review are done (last commit 94b0be8). The user
+reads the theory in `docs/study/phase-0.md` (answers in `docs/notes/phase-0.md`,
+from memory first), then `/drill`; weak spots go below. Then `/wrap` marks
+phase 0 done and phase 1 starts with `/problem` (deferred items for phase 1
+are listed in `docs/progress/README.md`).
+
+Also pending from the user:
+- Whether `docs/notes/` is committed (left untracked on purpose).
+- Write the failure-experiment results (one line each) in the notes; they
+  feed the study pack's section 10 and `/drill`.
+- Optional extra tests proposed by `tester`: importing worker/scheduler
+  `main.ts` doesn't start them; a fatal shutdown request reports exit 1.
+- Something the user wants to tell Claude for after phase 1 (not yet said).
+- Check the first CI run with the new smoke and audit steps (94b0be8).
 
 User preferences (also in memory): no Claude watermark in proposed commit
 messages; keep comments minimal (short "why" only); for code Claude writes,
