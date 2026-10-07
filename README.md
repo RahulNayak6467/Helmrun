@@ -12,8 +12,10 @@ API → scheduler → queue → workers → per-run sandboxes → agent runtime
 ## Status
 
 Helmrun is under active development, built in phases. **Phase 0 (foundation)**
-is in progress: configuration, PostgreSQL and migrations, structured logging,
-request IDs, health checks, graceful shutdown, tests, and CI. Product features
+is in its exit review: configuration, PostgreSQL and migrations, Valkey,
+structured logging, request IDs, health checks, graceful shutdown, a stable
+error format, an OpenAPI contract, scheduler and worker process shells, tests,
+and CI. Product features
 (tenants, agents, runs) start in phase 1. See
 [`docs/progress/`](docs/progress/README.md) for the current state.
 
@@ -50,6 +52,14 @@ Valkey is optional at runtime: PostgreSQL is the source of truth and Redis only
 speeds things up. The API starts and stays ready without it, logs when it's
 unavailable or recovers, and requests fall back to PostgreSQL.
 
+The scheduler and worker are shells until phase 3: they start, log, stay
+alive, and shut down cleanly.
+
+```sh
+pnpm --filter @helmrun/scheduler dev
+pnpm --filter @helmrun/worker dev
+```
+
 Stop with `Ctrl+C`, then `docker compose down`. Development data persists in
 named volumes; `docker compose down --volumes` deletes it.
 
@@ -81,6 +91,43 @@ pnpm db:migrate                 # apply to the development database
 pnpm db:migrate:test            # apply to the test database
 ```
 
+## Errors
+
+Every error response has the same JSON shape:
+
+```json
+{
+  "error": {
+    "code": "ROUTE_NOT_FOUND",
+    "message": "Route not found",
+    "requestId": "e9d9d13a-e2f4-4b28-a079-15691186af5a"
+  }
+}
+```
+
+- `code` is stable and meant for client code; codes are added, never renamed.
+- `message` is safe to show. Unexpected errors always return 500
+  `INTERNAL_ERROR` with a generic message; the details go only to the logs.
+- `requestId` matches the `x-request-id` response header. Quote it when
+  reporting a problem: it finds the matching log line.
+- Validation errors (400 `INVALID_INPUT`) add up to 10 `issues`, each a field
+  `path` and a `message`, never the rejected value.
+
+Errors are thrown as `AppError` (`packages/shared`) with a kind such as
+`not_found` or `unavailable`; only the API maps kinds to HTTP statuses. Design:
+[decision 015](docs/decisions/015-error-model.md).
+
+## API contract
+
+`apps/api/openapi.json` is generated from the API's Zod schemas
+(`apps/api/src/http/openapi/document.ts`) and committed. After changing a route
+or schema, regenerate it and commit the result; CI fails if it's stale.
+
+```sh
+pnpm openapi:generate   # rewrite apps/api/openapi.json
+pnpm openapi:check      # what CI runs
+```
+
 ## Configuration
 
 Each app validates its environment once at startup and refuses to start if
@@ -94,6 +141,7 @@ anything is missing or invalid, naming the variable but never its value.
 | API server | `PORT`, `HTTP_REQUEST_TIMEOUT_MS`, `HTTP_HEADERS_TIMEOUT_MS`, `HTTP_KEEP_ALIVE_TIMEOUT_MS`, `SHUTDOWN_TIMEOUT_MS` |
 | PostgreSQL | `DATABASE_URL`, `DB_POOL_MAX`, `DB_CONNECTION_TIMEOUT_MS`, `DB_POOL_IDLE_TIMEOUT_MS`, `DB_STATEMENT_TIMEOUT_MS`, `DB_READINESS_TIMEOUT_MS` |
 | Valkey | `REDIS_URL`, `REDIS_COMMAND_TIMEOUT_MS`, `REDIS_CONNECT_TIMEOUT_MS` |
+| Scheduler, worker | `NODE_ENV`, `LOG_LEVEL`, `LOG_PRETTY`, `SHUTDOWN_TIMEOUT_MS` (until phase 3) |
 
 Some values are checked together. For example, `SHUTDOWN_TIMEOUT_MS` must
 exceed `DB_STATEMENT_TIMEOUT_MS`, so a request in the middle of a query can
@@ -111,8 +159,8 @@ packages/
   database/     PostgreSQL pool, health query, migrations
   logger/       structured logging with redaction
   redis/        Redis/Valkey client: fail-fast settings, connection logging, bounded close
-  shared/       dependency-free building blocks (clock, lifecycle, shutdown)
-docs/           overview, phase specs, decisions, progress
+  shared/       dependency-free building blocks (errors, clock, lifecycle, shutdown)
+docs/           overview, phase specs, decisions, progress, guides, study packs
 ```
 
 Apps depend on packages, never on each other. `packages/shared` depends on

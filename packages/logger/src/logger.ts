@@ -1,5 +1,6 @@
 import pino, { type Level, type Logger } from 'pino';
 
+import { serializeError } from './error-serializer.js';
 import { createRedactionOptions } from './redaction.js';
 
 export type LogLevel = Level | 'silent';
@@ -47,8 +48,8 @@ export const createLogger = (options: LoggerOptions): Logger =>
       env: options.environment,
     },
     serializers: {
-      err: pino.stdSerializers.err,
-      error: pino.stdSerializers.err,
+      err: serializeError,
+      error: serializeError,
     },
     redact: createRedactionOptions(options.extraRedactPaths),
     timestamp: pino.stdTimeFunctions.isoTime,

@@ -119,11 +119,39 @@ describe('createLogger', () => {
     });
     const records = parseLogRecords(output);
 
-    expect(records[0]).toMatchObject({ err: { type: 'Error', message: 'safe err message' } });
+    expect(records[0]).toMatchObject({ err: { name: 'Error', message: 'safe err message' } });
     expect(records[1]).toMatchObject({
-      error: { type: 'TypeError', message: 'safe error message' },
+      error: { name: 'TypeError', message: 'safe error message' },
     });
   });
+
+  it.each(['err', 'error'])(
+    'filters a pg-like error logged under %s, dropping its detail',
+    (key) => {
+      const pgLikeError = Object.assign(new Error('duplicate key value'), {
+        code: '23505',
+        constraint: 'users_email_key',
+        table: 'users',
+        detail: 'Key (email)=(alice@example.com) already exists.',
+      });
+      const output = captureStdout(() => {
+        createLogger(baseOptions).error({ [key]: pgLikeError }, 'x');
+      });
+      const [record] = parseLogRecords(output);
+
+      expect(record).toMatchObject({
+        [key]: {
+          name: 'Error',
+          message: 'duplicate key value',
+          code: '23505',
+          constraint: 'users_email_key',
+          table: 'users',
+        },
+      });
+      expect(record).not.toHaveProperty([key, 'detail']);
+      expect(output).not.toContain('alice@example.com');
+    },
+  );
 
   it('applies the base redaction list', () => {
     const secretSentinel = 'factory-secret-that-must-not-appear';

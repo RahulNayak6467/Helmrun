@@ -50,6 +50,16 @@ describe('createApp', () => {
     expect(response.headers['x-powered-by']).toBeUndefined();
   });
 
+  it.each([
+    ['/health/live', 200],
+    ['/nope', 404],
+  ])('sends x-content-type-options: nosniff on GET %s (%i)', async (path, status) => {
+    const response = await request(createTestApp()).get(path);
+
+    expect(response.status).toBe(status);
+    expect(response.headers['x-content-type-options']).toBe('nosniff');
+  });
+
   it('sets a request ID on every response', async () => {
     const response = await request(createTestApp()).get('/anything');
 

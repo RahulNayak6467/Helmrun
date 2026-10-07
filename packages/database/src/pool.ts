@@ -56,8 +56,8 @@ export const createPool = (options: DatabaseOptions, logger: DatabaseLogger): Po
       {
         component: 'postgres',
         event: 'postgres_idle_client_error',
-        err: {
-          type: error.name,
+        errorDetails: {
+          name: error.name,
           message: error.message,
           stack: error.stack,
           ...('code' in error && typeof error.code === 'string' ? { code: error.code } : {}),

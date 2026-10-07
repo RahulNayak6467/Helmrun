@@ -124,8 +124,8 @@ describe('createPool', () => {
       {
         component: 'postgres',
         event: 'postgres_idle_client_error',
-        err: {
-          type: 'Error',
+        errorDetails: {
+          name: 'Error',
           message: 'connection terminated unexpectedly',
           stack: error.stack,
           code: '57P01',

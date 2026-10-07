@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const pinoTestDoubles = vi.hoisted(() => ({
-  errorSerializer: vi.fn(),
   fakeLogger: { kind: 'fake-pino-logger' },
   isoTime: vi.fn(),
   pinoFactory: vi.fn<(options: unknown) => unknown>(),
@@ -9,11 +8,11 @@ const pinoTestDoubles = vi.hoisted(() => ({
 
 vi.mock('pino', () => ({
   default: Object.assign(pinoTestDoubles.pinoFactory, {
-    stdSerializers: { err: pinoTestDoubles.errorSerializer },
     stdTimeFunctions: { isoTime: pinoTestDoubles.isoTime },
   }),
 }));
 
+import { serializeError } from './error-serializer.js';
 import { createLogger, type LoggerOptions } from './logger.js';
 import { REDACTION_CENSOR } from './redaction.js';
 
@@ -82,10 +81,7 @@ describe('createLogger wiring', () => {
     expect(options).toMatchObject({
       level: 'warn',
       base: { service: 'example-service', env: 'test' },
-      serializers: {
-        err: pinoTestDoubles.errorSerializer,
-        error: pinoTestDoubles.errorSerializer,
-      },
+      serializers: { err: serializeError, error: serializeError },
       timestamp: pinoTestDoubles.isoTime,
       messageKey: 'msg',
       redact: { censor: REDACTION_CENSOR },

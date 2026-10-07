@@ -27,7 +27,7 @@
     "openapi:generate": "pnpm --filter @helmrun/api openapi:generate",
     "openapi:check": "pnpm openapi:generate && { git diff --exit-code -- apps/api/openapi.json && git ls-files --error-unmatch apps/api/openapi.json > /dev/null 2>&1 || { echo 'apps/api/openapi.json is stale or untracked: run pnpm openapi:generate and commit it' >&2; exit 1; }; }",
     "test:stack": "docker compose -f docker-compose.test.yml --env-file .env.test up -d --wait && pnpm db:migrate:test",
-    "validate": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
+    "validate": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm openapi:check && pnpm test && pnpm build",
     "prepare": "simple-git-hooks"
   },
   "simple-git-hooks": {

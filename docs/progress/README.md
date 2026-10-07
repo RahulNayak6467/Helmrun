@@ -46,6 +46,9 @@ and `/wrap` must surface the items listed for it.
 | 1 | Working mode (user's call, 2026-10-07): the user writes all logical code flow; Claude coaches (help ladder), does scaffolding/docs, and `tester` writes tests. Each feature runs the learning loop: predict → break it → teach-back → design check → build thin → `/review` with "missed because" → tests → re-break → drill. Notes in `docs/notes/phase-1.md`. Full loop: `docs/guides/learning-loop.md` | Phase 0 discussion |
 | 1 | Transaction helper in `packages/database` (user writes it). Don't introduce it upfront: the user writes transactions inline first; once that passes review, show the helper as the production practice and refactor (user's call, 2026-10-07) | Decision 010 |
 | 1 | Decide branching: one branch per workstream merged into `main`; add the rule to `CLAUDE.md` (`/review` defaults to `git diff main...HEAD`) | Phase 0 discussion |
+| 1 | Log-level polish (review queue 36): one level for 4xx between `request_failed` and the request logger; no stacks for expected 4xx; DB readiness failures logged on transitions only | Phase 0 exit review |
+| 1 | Decision 015 open notes (review queue 29): library messages carrying values (pg `22P02`); only boundary parsing counts as `invalid_input` | Phase 0 step 13 review |
+| 1 | Repeat the load baseline (`docs/baselines/phase-0-load.md`) once DB-backed endpoints exist | Phase 0 spec §21 |
 | 3 | Add top-level `tests/e2e/` for cross-app tests (API → SQS → worker) | Decision 004 |
 | 3 | Decide where run-state transition logic lives (shared by API, scheduler, worker, recovery) | Decision 005 |
 | 3 | Worker needs `AGENT_PAYLOAD_REDACT_PATHS` (now in `apps/api/src/dependencies.ts`; apps can't import apps): move it to a Helmrun-specific package | Phase 0 shells |

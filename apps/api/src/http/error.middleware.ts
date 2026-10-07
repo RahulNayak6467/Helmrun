@@ -1,4 +1,4 @@
-import type { Logger } from '@helmrun/logger';
+import { serializeError, type Logger } from '@helmrun/logger';
 import { AppError, type ErrorKind } from '@helmrun/shared';
 import { type Request, type Response, type NextFunction } from 'express';
 import * as z from 'zod';
@@ -17,9 +17,6 @@ const STATUS_BY_KIND = {
 
 const MAX_ISSUES = 10;
 const MAX_ISSUE_TEXT_LENGTH = 200;
-const MAX_LOGGED_MESSAGE_LENGTH = 1_000;
-const MAX_LOGGED_STACK_LENGTH = 4_000;
-const MAX_LOGGED_FIELD_LENGTH = 200;
 
 interface BodyParserErrorDefinition {
   kind: ErrorKind;
@@ -141,49 +138,13 @@ const mapToPublicError = (
   };
 };
 
-const toLoggableScalar = (value: unknown): string | number | undefined => {
-  if (typeof value === 'string') return truncate(value, MAX_LOGGED_FIELD_LENGTH);
-  if (typeof value === 'number') return value;
-  return undefined;
-};
-
-const toLoggableError = (error: unknown, depth = 0): Record<string, unknown> => {
-  if (!(error instanceof Error)) {
-    return { thrownType: typeof error };
-  }
-
-  const fields: Record<string, unknown> = {
-    name: error.name,
-    message: truncate(error.message, MAX_LOGGED_MESSAGE_LENGTH),
-    stack: error.stack === undefined ? undefined : truncate(error.stack, MAX_LOGGED_STACK_LENGTH),
-  };
-
-  if ('code' in error) fields.code = toLoggableScalar(error.code);
-  if ('constraint' in error) fields.constraint = toLoggableScalar(error.constraint);
-  if ('table' in error) fields.table = toLoggableScalar(error.table);
-
-  if (error.cause !== undefined && depth < 3) {
-    fields.cause = toLoggableError(error.cause, depth + 1);
-  }
-
-  return fields;
-};
-
-const safeLoggableError = (error: unknown): Record<string, unknown> => {
-  try {
-    return toLoggableError(error);
-  } catch {
-    return { loggingFailed: true };
-  }
-};
-
 const logHandledError = (logger: Logger, appError: AppError, status: number): void => {
   const fields = {
     event: 'request_failed',
     code: appError.code,
     kind: appError.kind,
     status,
-    errorDetails: safeLoggableError(appError),
+    errorDetails: serializeError(appError),
   };
 
   if (status >= 500) {
@@ -204,7 +165,7 @@ const handleError = (
 
   if (res.headersSent) {
     logger.error(
-      { event: 'error_after_response_started', errorDetails: safeLoggableError(error) },
+      { event: 'error_after_response_started', errorDetails: serializeError(error) },
       'Error after the response had started',
     );
     next(error);
@@ -247,7 +208,7 @@ const handleError = (
   }
 
   logger.error(
-    { event: 'request_failed_unexpectedly', errorDetails: safeLoggableError(error) },
+    { event: 'request_failed_unexpectedly', errorDetails: serializeError(error) },
     'Unexpected error while handling request',
   );
 

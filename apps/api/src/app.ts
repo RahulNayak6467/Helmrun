@@ -24,6 +24,10 @@ export const createApp = (dependencies: AppDependencies): Express => {
 
   // Don't advertise the framework in every response.
   app.disable('x-powered-by');
+  app.use((_req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    next();
+  });
 
   // Request ID first, so everything after it (including body-parse failures)
   // logs with the ID.

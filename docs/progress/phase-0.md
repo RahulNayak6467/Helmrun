@@ -5,8 +5,14 @@ Spec: `docs/phases/phase-0-foundation.md`
 ## Status
 All implementation steps done: 1–15, 17, 19, 21, CI extras, scheduler/worker
 shells. Step 13 (errors) done 2026-10-07, reviewed fresh, all findings fixed.
-Left: tests for the shells, helpers, and OpenAPI; README error section
-(user); then the exit sequence.
+Phase 0 tests done 2026-10-07 (commit 4be61af, 553 tests; reviewed fresh,
+findings fixed incl. the extensionless `node dist/main` silent exit). Exit
+sequence: phase-wide `/review fresh` done 2026-10-07 (all exit criteria met;
+findings fixed: shared log serializer, nosniff, Dependabot + audit, load
+baseline, app-import lint rule, CI smoke of built apps; log-level polish
+deferred to phase 1); failure experiments done (user); README updated; study
+pack in `docs/study/phase-0.md`. Left: the user works through the study pack,
+then `/drill`, then `/wrap` marks phase 0 done.
 
 ## Done
 - Docs imported; AEC renamed to Helmrun across all docs (2026-10-03)

@@ -17,6 +17,15 @@ const envAccess = [
 
 // Relative imports must stay inside their own workspace. Code in another
 // workspace is reached through its package name, so `exports` decides what's public.
+const helmrunApps = [
+  '@helmrun/api',
+  '@helmrun/api/*',
+  '@helmrun/scheduler',
+  '@helmrun/scheduler/*',
+  '@helmrun/worker',
+  '@helmrun/worker/*',
+];
+
 const crossWorkspaceRelative = {
   group: ['**/apps/**', '**/packages/**'],
   message: 'Import other workspaces by package name (@helmrun/...), not by relative path.',
@@ -66,8 +75,25 @@ export default defineConfig(
           patterns: [
             crossWorkspaceRelative,
             {
-              group: ['@helmrun/api', '@helmrun/scheduler', '@helmrun/worker', '@helmrun/api/*'],
+              group: helmrunApps,
               message: 'Packages must not import apps. Move shared code into a package.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ['apps/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            crossWorkspaceRelative,
+            {
+              group: helmrunApps,
+              message: 'Apps must not import other apps. Move shared code into a package.',
             },
           ],
         },

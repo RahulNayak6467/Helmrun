@@ -1,10 +1,17 @@
 # Review queue
 
 ## Open
+36. [small, deferred to phase 1] one 4xx logs `request_failed` INFO + `http_request_completed` WARN; 4xx log full AppError stacks (~1.5 KB); readiness logs a stack per failed probe + ERROR completion during outages (not transition-only). Log-level polish. (phase exit review 2026-10-07)
 29. [note, before phase 1] decision 015 — `message` can itself carry values (pg 22P02 `invalid input syntax for type uuid: "…"`); and every ZodError → 400, including ones from parsing DB rows/model output inside handlers (internal bug shown as client error). Decide boundary-only `invalid_input`. (fresh review 2026-10-07)
 15. [small] packages/redis/src/redis.ts — closing a client that's reconnecting after a lost connection doesn't log `redis_closed` (no `end` from ioredis; same cause as the known never-connected case). Note only.
 
 ## Done
+- [x] raw `err` log sites bypassed the allowlist (pg `detail`, uncapped). The allowlist now lives in `packages/logger` (`serializeError`) as the `err`/`error` serializer for every logger; the error middleware uses it too (fixed 2026-10-07, Claude; phase exit review)
+- [x] phase 0 spec gaps: `X-Content-Type-Options: nosniff` on every response; Dependabot (npm + Actions, weekly) and `pnpm audit --prod --audit-level=high` in CI; load baseline recorded in `docs/baselines/phase-0-load.md` (fixed 2026-10-07, Claude; phase exit review)
+- [x] eslint.config.js — apps may not import other apps; packages blocked from all three apps incl. subpaths (fixed 2026-10-07, Claude)
+- [x] packages/database/src/pool.ts — idle-client error now under `errorDetails` with `name` (no `type:"Object"` rewrite) (fixed 2026-10-07, Claude)
+- [x] ci.yml — smoke step starts each built app from `dist/main`, checks `/health/live`, SIGTERM → exit 0 (fixed 2026-10-07, Claude)
+- [x] package.json — `validate` now runs `openapi:check` (fixed 2026-10-07, Claude)
 - [x] packages/shared/src/lifecycle/entry-point.ts — `node dist/main` (no extension) loaded the file but the guard returned false → worker/scheduler/API exited 0 silently. Now also tries argv[1] + the module's extension; decision 011 updated (fixed 2026-10-07, Claude; found by fresh review of the phase 0 tests)
 - [x] phase 0 tests — worker/scheduler main tests inherited the developer's shell env (LOG_PRETTY / SHUTDOWN_TIMEOUT_MS broke them); OpenAPI contract check ignored extra keys and documented headers; child-test diagnostics (sent to tester 2026-10-07)
 - [x] apps/api/src/http/error.middleware.ts — ZodError cause made log lines unbounded (~200 MB for a 1 MB body). ZodError no longer kept as cause; every logged message/stack capped (1,000 / 4,000 chars); log-size test (fixed 2026-10-07, Claude)
