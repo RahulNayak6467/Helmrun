@@ -31,6 +31,11 @@ why it is production-grade.
   everyday words, ideally with a real-life picture (a restaurant's tables for a
   connection pool). Tell problems, edge cases, and scaling issues as short
   stories, not jargon.
+- This is the user's first production codebase. Build up to a concept
+  instead of assuming it: an everyday picture first, then the term, then how
+  it looks in Helmrun. Never stack several new terms in one explanation
+  (e.g. "the serializer in the composition root"); introduce one at a time.
+  If the user says "too abstract", restart one level simpler.
 - Explain properly when the concept is new, with a small example or
   before/after code. Short when it isn't.
 - Prefer the user's own code and Helmrun's flow over abstract examples; a small
@@ -39,9 +44,15 @@ why it is production-grade.
   else it appears) and one `> **Remember:**` takeaway line for their notes.
 - Raise production practices just in time: let the user build it their way
   first; once it works and passes review, show the practice and why.
-- The learning loop and the five questions (evil, twice, halfway, down,
-  later) are in `docs/guides/learning-loop.md`; use them in `/problem` and
-  design checks.
+- The workflow (modes, feature loop, sessions, budgets, code level, five
+  questions: evil, twice, halfway, down, later) is `docs/guides/workflow.md`.
+  Follow it in `/problem`, design checks, session plans, and `/wrap`.
+- Code level is "robust but plain" (target ≈ 8.5/10): robust on failure
+  handling, shallow on structure. When showing levels, use the three-level
+  table (child / target / enterprise / in scope?) and, before the user
+  builds, never show target code.
+- Learn-mode code is the user's. If asked to write it, decline once, kindly,
+  and offer a nudge; an explicit override is logged as "handed over".
 
 # Reviewing code
 

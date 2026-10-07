@@ -30,6 +30,19 @@ One or two lines.
 ## Next step
 The single next concrete action.
 
+## Budget
+Phase budget (docs/guides/workflow.md §4), the task list with estimates,
+and a session log.
+
+| Task | Mode | Est. | Actual | Done |
+|---|---|---|---|---|
+
+Session log: `YYYY-MM-DD · session Xh · tasks done (est. sum) · actual`
+Budget line: `Phase N: <used> / <budget> h used · <est. of done tasks> h of tasks done · <on track | at risk> (need ≥ <ratio>, at <done ÷ used>)`
+
+## Handed over
+- (learn-mode work the user explicitly handed to Claude; revisit later)
+
 ## Open questions
 - …
 
@@ -37,7 +50,15 @@ The single next concrete action.
 - (filled by /drill)
 ```
 
-Keep any existing "Interview weak spots" entries.
+Keep any existing "Interview weak spots" and "Handed over" entries.
+
+**Session accounting** (from phase 1; see `docs/guides/workflow.md` §3–4):
+ask the user how long the session actually was if it isn't clear. Mark the
+tasks finished this session, record their actual time, add a session-log
+line, and recompute the budget line. If the ratio is below the required
+one, say by how much and what carries over. If the phase is projected over
+budget, propose which **ship-mode** scope to cut (never learn steps). Also
+note any learn-mode handover under "Handed over".
 
 # 2. Update `docs/progress/README.md`
 
@@ -134,6 +155,6 @@ commits.
 
 # 7. Report
 
-In 3–5 lines: commit check result first if anything was found, then what
-you updated, the next step, checkpoint status, and the proposed commit
-message. If anything was ambiguous (e.g. whether a decision was final), ask.
+In 3–5 lines: commit check result first if anything was found, then the
+budget line, what you updated, the next step, checkpoint status, and the
+proposed commit message (no Claude attribution). If anything was ambiguous (e.g. whether a decision was final), ask.

@@ -25,22 +25,24 @@ feature count.
 
 ## How we work on a feature
 
-Full worked example: `docs/guides/workflow-walkthrough.md`.
+**The workflow is `docs/guides/workflow.md`** (from phase 1): learn/ship
+labels, the 8-step feature loop, session plans and time budgets, code level
+("robust but plain"), retention, and guardrails. Follow it. In short:
 
-1. **`/problem`**: what the step solves, what breaks, the naive trap, reading,
-   design questions.
-2. **Design check**: required when the feature touches state, concurrency,
-   security, or a boundary between apps. The user shares a few bullets; you
-   check failure modes before any code exists. Skip it for simple pieces.
-3. **Build**: the user writes the code. Answer what they ask (help ladder).
-   Unprompted, flag only blockers in one line: a security hole, data loss,
-   or an approach that fights the design. No full reviews mid-build.
-4. **`/review`** → fix → `/review next`, until no important issues remain.
-   Full reviews happen only through `/review`, so all findings live in one
-   queue.
-5. **Tests**: the user writes cases in plain English; the `tester` agent
-   implements them and proposes extras; the user picks which to add.
-6. **`/wrap`**: progress, decisions, commit message.
+1. **`/problem`**: problem first; label each step learn or ship.
+2. **Break** it in miniature, predicting first.
+3. **Design check**: the user's bullets → the three-level table
+   (child / target / enterprise) and a build checklist. No target code.
+4. **Build**: the user writes learn-mode code (help ladder via `stuck:`).
+   Unprompted, flag only blockers in one line. No full reviews mid-build.
+5. **`/spar`**: edge cases one at a time; the user fixes them.
+6. **`/review`** → fix → `/review next`. All findings live in one queue.
+7. **Tests**: the user writes cases; `tester` implements them.
+8. **Own**: re-break, compare with the target, drill, interview story;
+   then `/wrap`.
+
+Sessions start with a plan sized to the session length and the phase budget;
+`/wrap` records actual time.
 
 End of phase, in order:
 1. `/review fresh` (independent `reviewer` pass) until no important issues remain.
@@ -53,7 +55,13 @@ End of phase, in order:
 
 **What you may write:** root/package config scaffolding (`package.json`,
 `tsconfig*.json`, `pnpm-workspace.yaml`), docs, tests (via `tester`), and
-boilerplate in folders the user unlocks. Everything else, the user writes.
+ship-mode code in folders the user unlocks. Learn-mode code is the user's:
+decline once and offer a nudge; if the user overrides explicitly, log it in
+the phase file as "handed over: X, revisit".
+
+**Git:** one branch per feature from phase 1, merged into `main`; `/review`
+defaults to `git diff main...HEAD`. No comments in code. Commit messages
+carry no Claude attribution.
 
 ## Docs (read by path when relevant; don't load everything)
 
@@ -66,7 +74,10 @@ boilerplate in folders the user unlocks. Everything else, the user writes.
 | `docs/progress/phase-N.md` | Current phase detail: done, next step, open questions |
 | `docs/decisions/` | One file per decision; `README.md` is the index |
 | `docs/REVIEW_QUEUE.md` | Open review findings |
+| `docs/guides/workflow.md` | **The workflow**: modes, feature loop, sessions, budgets, code level |
 | `docs/guides/` | Worked examples (e.g. the feature workflow walkthrough) |
+| `docs/study/phase-N.md` | Phase study packs |
+| `docs/notes/` | The user's own notes and pattern cards (theirs; read, don't edit) |
 
 Progress and the decisions index are loaded at session start by a hook.
 Recorded decisions are the baseline: don't silently contradict them. If you
@@ -143,7 +154,7 @@ All from the repo root. Workspace names are `@helmrun/<folder>`.
 ## Claude Code setup
 
 - Output style `Mentor` (`.claude/output-styles/mentor.md`): how to talk.
-- Skills (user-invoked): `/problem`, `/review [next|all|fresh]`, `/wrap`, `/drill`.
+- Skills (user-invoked): `/problem`, `/spar <files>`, `/review [next|all|fresh]`, `/wrap`, `/drill`.
 - Agents: `reviewer` (read-only fresh review), `tester` (writes tests from the
   user's cases, proposes extra cases, never touches source).
 - Review rubric (`.claude/review-rubric.md`): which lenses apply to which

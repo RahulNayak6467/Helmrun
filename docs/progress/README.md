@@ -4,17 +4,21 @@ Current phase: 0
 
 ## Phase status
 
-| Phase | Status | Target |
-|---|---|---|
-| 0 — Foundation | In progress | Mid-Oct 2026 |
-| 1 — Control plane | Not started | Early Nov 2026 |
-| 2 — Agent runtime | Not started | Dec 2026 |
-| 3 — Distributed execution | Not started | Dec 2026 |
-| 4 — Durable execution | Not started | Dec 2026 – Jan 2027 |
-| 5 — Isolation & security | Not started | Jan 2027 |
-| 6 — Streaming & observability | Not started | Jan 2027 |
-| 7 — AWS infrastructure | Not started | Feb 2027 |
-| 8 — DX, hardening, finalization | Not started | Mid-Mar 2027 |
+| Phase | Status | Target | Budget (h) |
+|---|---|---|---|
+| 0 — Foundation | In progress | Mid-Oct 2026 | 8 (study pack + drill left) |
+| 1 — Control plane | Not started | Early Nov 2026 | 52.5 |
+| 2 — Agent runtime | Not started | Dec 2026 | 57.5 |
+| 3 — Distributed execution | Not started | Dec 2026 | 62.5 |
+| 4 — Durable execution | Not started | Dec 2026 – Jan 2027 | 80 |
+| 5 — Isolation & security | Not started | Jan 2027 | 57.5 |
+| 6 — Streaming & observability | Not started | Jan 2027 | 52.5 |
+| 7 — AWS infrastructure | Not started | Feb 2027 | 67.5 |
+| 8 — DX, hardening, finalization | Not started | Mid-Mar 2027 | 62.5 |
+
+Budget = middle of the spec's estimate + 5 h (`docs/guides/workflow.md` §4).
+Per session, finish at least session length × (middle ÷ budget) in planned
+tasks.
 
 ## Schedule
 
@@ -43,7 +47,7 @@ and `/wrap` must surface the items listed for it.
 
 | Phase | Item | Source |
 |---|---|---|
-| 1 | Working mode (user's call, 2026-10-07): the user writes all logical code flow; Claude coaches (help ladder), does scaffolding/docs, and `tester` writes tests. Each feature runs the learning loop: predict → break it → teach-back → design check → build thin → `/review` with "missed because" → tests → re-break → drill. Notes in `docs/notes/phase-1.md`. Full loop: `docs/guides/learning-loop.md` | Phase 0 discussion |
+| 1 | Run phase 1 with the agreed workflow (`docs/guides/workflow.md`, 2026-10-07): learn/ship labels at `/problem`, the 8-step loop with `/spar`, session plans against the 52.5 h budget, "robust but plain" code. `/problem` drafts the phase 1 task list with estimates summing to 47.5 h | Workflow discussion |
 | 1 | Transaction helper in `packages/database` (user writes it). Don't introduce it upfront: the user writes transactions inline first; once that passes review, show the helper as the production practice and refactor (user's call, 2026-10-07) | Decision 010 |
 | 1 | Decide branching: one branch per workstream merged into `main`; add the rule to `CLAUDE.md` (`/review` defaults to `git diff main...HEAD`) | Phase 0 discussion |
 | 1 | Log-level polish (review queue 36): one level for 4xx between `request_failed` and the request logger; no stacks for expected 4xx; DB readiness failures logged on transitions only | Phase 0 exit review |
