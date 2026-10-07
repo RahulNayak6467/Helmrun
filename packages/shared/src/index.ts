@@ -18,3 +18,9 @@ export {
   type ShutdownProcessTarget,
   type ShutdownStep,
 } from './lifecycle/shutdown-coordinator.js';
+export {
+  AppError,
+  type ErrorKind,
+  type AppErrorOptions,
+  RETRYABLE_BY_KIND,
+} from './errors/app-error.js';

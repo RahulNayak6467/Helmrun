@@ -43,6 +43,24 @@
                 }
               }
             }
+          },
+          "500": {
+            "description": "Unexpected error. The body never contains internal details.",
+            "headers": {
+              "x-request-id": {
+                "description": "ID of this request; quote it when reporting a problem.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -75,6 +93,24 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ReadyResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error. The body never contains internal details.",
+            "headers": {
+              "x-request-id": {
+                "description": "ID of this request; quote it when reporting a problem.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -121,6 +157,47 @@
         "required": ["status"],
         "additionalProperties": false,
         "description": "The process is up and serving HTTP."
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "requestId": {
+                "type": ["string", "null"]
+              },
+              "issues": {
+                "maxItems": 10,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "path": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["path", "message"],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": ["code", "message", "requestId"],
+            "additionalProperties": false
+          }
+        },
+        "required": ["error"],
+        "additionalProperties": false,
+        "description": "Every error response. `issues` is present only for request validation errors."
       },
       "ReadyResponse": {
         "type": "object",

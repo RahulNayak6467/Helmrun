@@ -1,9 +1,20 @@
 # Review queue
 
 ## Open
+29. [note, before phase 1] decision 015 — `message` can itself carry values (pg 22P02 `invalid input syntax for type uuid: "…"`); and every ZodError → 400, including ones from parsing DB rows/model output inside handlers (internal bug shown as client error). Decide boundary-only `invalid_input`. (fresh review 2026-10-07)
 15. [small] packages/redis/src/redis.ts — closing a client that's reconnecting after a lost connection doesn't log `redis_closed` (no `end` from ioredis; same cause as the known never-connected case). Note only.
 
 ## Done
+- [x] apps/api/src/http/error.middleware.ts — ZodError cause made log lines unbounded (~200 MB for a 1 MB body). ZodError no longer kept as cause; every logged message/stack capped (1,000 / 4,000 chars); log-size test (fixed 2026-10-07, Claude)
+- [x] apps/api/src/http/error.middleware.ts — body-parser client errors other than JSON/size became 500. Recognised as a group (`toBodyParserError`): own codes, 415 cases → `invalid_input`, any exposed 4xx → `INVALID_REQUEST_BODY`; none keep a cause; tests per type (fixed 2026-10-07, Claude; decision 015 updated)
+- [x] error.middleware.ts — structural never-throw: whole handler in try/catch → fixed 500 envelope with the request ID, then one `error_middleware_failed` log line (fixed 2026-10-07, Claude; gap found by tester)
+- [x] error.middleware.ts — `code`/`constraint`/`table` only strings (capped) or numbers; issue path/message capped at 200 chars (fixed 2026-10-07, Claude)
+- [x] error.middleware.test.ts — stale comment removed; `loggingFailed` line asserted; Zod log size and caps tested (fixed 2026-10-07, tester)
+- [x] apps/api/src/http/error.middleware.ts — INVALID_JSON kept the body-parser SyntaxError as cause; its message and stack echo a slice of the raw body (`sk-live-12…`) into the logs. Cause dropped for INVALID_JSON; test guards it (fixed 2026-10-07, Claude; found by tester)
+- [x] apps/api/src/http/error.middleware.ts — an error with a throwing `code`/`cause` getter made the error middleware throw → Express HTML page. Logging now goes through `safeLoggableError` (try/catch → `{ loggingFailed: true }`); tests guard both getters (fixed 2026-10-07, Claude; found by tester)
+- [x] apps/api/src/http/error.middleware.ts — Zod branch passed the raw ZodError to mapToPublicError (400 with INTERNAL_ERROR, no issues); now converted to AppError first (fixed 2026-10-07, user)
+- [x] apps/api/src/http/error.middleware.ts — only unknown errors were logged; now one line per error in every branch (`logHandledError`: 4xx → info, 5xx → error; headersSent branch logs before `next`) (fixed 2026-10-07, Claude at the user's request)
+- [x] apps/api/src/http/error.middleware.ts — small: leftover TODO comment, statuses all from STATUS_BY_KIND, `ValidationIssue` type, one fallback wording ("Internal error"), missing `)` in the Zod branch (fixed 2026-10-07, Claude)
 - [x] apps/api/src/http/openapi/document.ts — spec omitted the `x-request-id` response header set on every response; now in a shared `commonResponseHeaders` every operation spreads in (fixed 2026-10-07, Claude)
 - [x] apps/api/package.json / document.ts — builder ships unused in `dist/`, `zod-openapi` a runtime dependency; kept on purpose (tests import it, serving later needs no move), recorded in decision 014 (closed 2026-10-07)
 - [x] apps/api/src/health/health.routes.ts — comment claimed a contract test that doesn't exist yet; reworded (fixed 2026-10-07, Claude)

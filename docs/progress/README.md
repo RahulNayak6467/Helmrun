@@ -43,7 +43,8 @@ and `/wrap` must surface the items listed for it.
 
 | Phase | Item | Source |
 |---|---|---|
-| 1 | Write the transaction helper in `packages/database` (user writes it) | Decision 010 |
+| 1 | Working mode (user's call, 2026-10-07): the user writes all logical code flow; Claude coaches (help ladder), does scaffolding/docs, and `tester` writes tests. Each feature runs the learning loop: predict → break it → teach-back → design check → build thin → `/review` with "missed because" → tests → re-break → drill. Notes in `docs/notes/phase-1.md`. Full loop: `docs/guides/learning-loop.md` | Phase 0 discussion |
+| 1 | Transaction helper in `packages/database` (user writes it). Don't introduce it upfront: the user writes transactions inline first; once that passes review, show the helper as the production practice and refactor (user's call, 2026-10-07) | Decision 010 |
 | 1 | Decide branching: one branch per workstream merged into `main`; add the rule to `CLAUDE.md` (`/review` defaults to `git diff main...HEAD`) | Phase 0 discussion |
 | 3 | Add top-level `tests/e2e/` for cross-app tests (API → SQS → worker) | Decision 004 |
 | 3 | Decide where run-state transition logic lives (shared by API, scheduler, worker, recovery) | Decision 005 |

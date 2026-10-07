@@ -3,6 +3,8 @@ import express, { type Express } from 'express';
 import type { ApiDependencies } from './dependencies.js';
 import { createHealthRoutes } from './health/health.routes.js';
 import type { ReadinessChecker } from './health/readiness.js';
+import { createErrorMiddleware } from './http/error.middleware.js';
+import { notFoundMiddleware } from './http/not-found.middleware.js';
 import { createRequestIdMiddleware } from './http/request-id.middleware.js';
 import { createRequestLoggerMiddleware } from './http/request-logger.middleware.js';
 
@@ -31,7 +33,8 @@ export const createApp = (dependencies: AppDependencies): Express => {
 
   app.use('/health', createHealthRoutes(dependencies.checkReadiness));
 
-  // Not-found and error handling (step 13) are added in a later chunk.
+  app.use(notFoundMiddleware);
+  app.use(createErrorMiddleware(dependencies.logger));
 
   return app;
 };

@@ -114,10 +114,8 @@ Deviations from the phase specs:
   don't fit together across phases.
 
 ## Open
-- Error model: the spec sketches `AppError` with an HTTP `statusCode`, but
-  `AppError` lives in `shared` and the worker/runtime will throw errors too.
-  Decide who maps errors to HTTP status. Settle when building the error model
-  in phase 0.
+- ~~Error model: who maps errors to HTTP status.~~ Settled: the API maps a
+  transport-neutral `kind` to HTTP status (decision 015).
 - ~~Redis client: inside `apps/api` vs a package now.~~ Settled: `packages/redis`
   (decision 013, 2026-10-07); there is no `apps/api/src/redis.ts`.
 - Where run-state transition logic lives once API, scheduler, worker, and

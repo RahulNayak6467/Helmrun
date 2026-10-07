@@ -3,10 +3,10 @@
 Spec: `docs/phases/phase-0-foundation.md`
 
 ## Status
-Spec steps 1–12, 14–15, 19 and 21 done, plus CI extras and the scheduler/worker
-shells and the OpenAPI baseline (step 17), each reviewed fresh with no
-important issues. Left: tests for the shells, helpers, and OpenAPI; then
-step 13 (errors) last, then the exit sequence.
+All implementation steps done: 1–15, 17, 19, 21, CI extras, scheduler/worker
+shells. Step 13 (errors) done 2026-10-07, reviewed fresh, all findings fixed.
+Left: tests for the shells, helpers, and OpenAPI; README error section
+(user); then the exit sequence.
 
 ## Done
 - Docs imported; AEC renamed to Helmrun across all docs (2026-10-03)
@@ -84,6 +84,20 @@ step 13 (errors) last, then the exit sequence.
   writes the committed `apps/api/openapi.json` (Prettier-formatted,
   deterministic); `pnpm openapi:check` in CI fails on a stale or untracked
   file. Fresh review: no important issues, 4 small fixed (2026-10-07)
+- Step 13, error boundary (decision 015; user ran the learning loop: notes,
+  curl experiment, five questions, kind list, design check; user wrote
+  `AppError` and most of the middleware, Claude wrote the rest at the user's
+  request): `AppError` in `shared` (kind, code, message, cause, `retryable`
+  from `RETRYABLE_BY_KIND`); `error.middleware.ts` (kind → status table,
+  body-parser errors as a group, Zod → `INVALID_INPUT` + ≤10 capped issues,
+  unknown → generic 500, allowlisted size-capped logging under
+  `errorDetails`, 4xx info / 5xx error, `headersSent`, never-throw fallback);
+  `not-found.middleware.ts`; wired after routes in `app.ts`; `ErrorResponse`
+  schema in OpenAPI (500 on health routes). Tester found two real bugs
+  (broken-JSON body text in logs via the SyntaxError cause; throwing getters
+  broke the handler); fresh review found unbounded Zod log lines (~200 MB)
+  and unrecognised body-parser client errors → 500; all fixed and tested.
+  472 unit + 22 integration tests pass (2026-10-07)
 
 ## Next step
 The user's plan for the rest of phase 0 (2026-10-07): three steps, easy →
@@ -105,7 +119,8 @@ medium → hard, then the exit sequence.
   - README "API contract" section (user-owned): `openapi.json` is generated
     and committed; `pnpm openapi:generate` after route changes; CI runs
     `pnpm openapi:check`.
-- **Hard:** step 13, errors (item 7), the user writes it; then its follow-ups.
+- **Hard: done** (step 13, see Done). Only the README error section is left
+  (user-owned): the envelope, the codes, request ID for support.
 - **Exit sequence:** `/review fresh` over the phase → failure experiments
   (user) → study pack → `/drill`.
 
@@ -147,17 +162,7 @@ everything that doesn't depend on the error model first, step 13 last.
    installed by the root `prepare` script); `vitest.config.ts` refuses to run
    tests if `NODE_ENV` isn't `test` or a shell `DATABASE_URL` points at a
    database not ending in `_test`; `pnpm test:stack`.
-7. Step 13, errors (last). Agreed so far: `shared` stays transport-neutral
-   (no `statusCode` on `AppError`); the API's error middleware maps errors to
-   HTTP status. Pending (question 1b): every `AppError` declares a kind from a
-   small closed list, and the API maps kind → status exhaustively; the user
-   writes that list (each kind's HTTP status, transient or not). Then
-   envelope, unknown-error logging (pg `detail` leak), where domain codes
-   live. Ports once the design is set: `not-found.middleware.ts`, the
-   invalid-JSON / payload-too-large checks. Follow-ups after it: OpenAPI
-   error schema, README error section.
-   Must land before the exit sequence (malformed-request experiment, error
-   boundary review) and before phase 1 (every endpoint throws through it).
+7. ~~Step 13, errors~~ done 2026-10-07 (see Done; decision 015).
 
 Done from the earlier porting plan: env validation (5), pool + migrations
 (7–8, transaction helper deferred to phase 1), app/server split (10), request
@@ -188,14 +193,9 @@ IDs + logging (11–12), health/readiness (14), graceful shutdown (15).
   field as an error (adding a field becomes breaking). `z.looseObject` fixes
   the spec but adds an index signature that kills the excess-property check
   on handlers. Decide how responses stay extensible.
-- Step 13 (errors): `pino.stdSerializers.err` copies pg error fields like
-  `detail` (`Key (email)=(...)`) into logs; redaction doesn't cover `err.*`.
-  Decide how error logging strips them.
-- Error model: list of error kinds, their HTTP statuses and transient flag
-  (see Next step). Direction agreed: API maps, `shared` stays transport-neutral
-  (decision 005 → Open, settle in step 13). Also: where domain error codes live,
-  since a single closed catalog in `shared` would pull Helmrun codes into a
-  generic package.
+- ~~Step 13 error logging, kinds, code location~~ settled 2026-10-07 in
+  decision 015 (allowlist everywhere, never `detail`; 9 kinds; codes per
+  feature).
 
 ## Interview weak spots
 - (filled by /drill)

@@ -25,3 +25,4 @@ API/scheduler/worker processes) are listed in
 | 012 | [Health, readiness, and graceful shutdown](012-health-readiness-graceful-shutdown.md) | 0 | Accepted |
 | 013 | [Redis client package: degrade, never fail](013-redis-client-package.md) | 0 | Accepted |
 | 014 | [OpenAPI generated from Zod schemas](014-openapi-from-zod.md) | 0 | Accepted |
+| 015 | [Error model: kinds in shared, HTTP mapping in the API](015-error-model.md) | 0 | Accepted |

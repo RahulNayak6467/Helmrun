@@ -5,6 +5,7 @@ import {
   notReadyResponseSchema,
   readyResponseSchema,
 } from '../../health/health.schemas.js';
+import { errorResponseSchema } from '../error.middleware.js';
 import { REQUEST_ID_HEADER } from '../request-id.middleware.js';
 
 // Contract version, not the package version: bump it when the public API
@@ -27,6 +28,14 @@ const probeHeaders = {
     schema: { type: 'string', enum: ['no-store'] },
   },
 } satisfies oas31.HeadersObject;
+
+// Any route can fail with an unexpected error. Routes that read a body add
+// 400/413 (phase 1); unknown paths answer 404 ROUTE_NOT_FOUND in this shape.
+const internalErrorResponse = {
+  description: 'Unexpected error. The body never contains internal details.',
+  headers: commonResponseHeaders,
+  content: { 'application/json': { schema: errorResponseSchema } },
+};
 
 // Pure: builds the document from the route schemas. scripts/generate-openapi.ts
 // writes it to openapi.json; tests can call it directly.
@@ -52,6 +61,7 @@ export const buildOpenApiDocument = (): ReturnType<typeof createDocument> =>
               headers: probeHeaders,
               content: { 'application/json': { schema: liveResponseSchema } },
             },
+            '500': internalErrorResponse,
           },
         },
       },
@@ -72,6 +82,7 @@ export const buildOpenApiDocument = (): ReturnType<typeof createDocument> =>
               headers: probeHeaders,
               content: { 'application/json': { schema: notReadyResponseSchema } },
             },
+            '500': internalErrorResponse,
           },
         },
       },
