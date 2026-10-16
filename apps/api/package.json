@@ -19,13 +19,13 @@
     "@helmrun/logger": "workspace:*",
     "@helmrun/redis": "workspace:*",
     "@helmrun/shared": "workspace:*",
-    "express": "5.2.1",
+    "express": "5.3.0",
     "zod": "catalog:",
     "zod-openapi": "6.0.2"
   },
   "devDependencies": {
     "@types/express": "5.0.6",
     "@types/supertest": "7.2.1",
-    "supertest": "7.3.0"
+    "supertest": "7.3.1"
   }
 }
