@@ -55,7 +55,7 @@ jobs:
 
       # Versions match package.json (packageManager, engines) and .nvmrc.
       - name: Install pinned pnpm and Node.js
-        uses: pnpm/setup@fbda4c85fc2e1e08721cd8763afea8f48d60f024 # v3.0.0
+        uses: pnpm/setup@a0881977cd8ea73b1ed212236c99ca10dcc80cf4 # v3.1.1
         with:
           version: 11.27.1
           runtime: node@24.21.0
@@ -108,7 +108,7 @@ jobs:
           persist-credentials: false
 
       - name: Install pinned pnpm and Node.js
-        uses: pnpm/setup@fbda4c85fc2e1e08721cd8763afea8f48d60f024 # v3.0.0
+        uses: pnpm/setup@a0881977cd8ea73b1ed212236c99ca10dcc80cf4 # v3.1.1
         with:
           version: 11.27.1
           runtime: node@24.21.0
