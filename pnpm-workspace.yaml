@@ -9,7 +9,7 @@ saveExact: true
 # Versions shared by several workspaces, declared once. Workspaces reference
 # them as "catalog:" so they can never drift apart.
 catalog:
-  zod: 4.6.6
+  zod: 4.6.7
 
 # pnpm blocks dependency install scripts unless allowed. esbuild (used by tsx and
 # vite) ships prebuilt binaries as optional dependencies, so its script isn't needed.
